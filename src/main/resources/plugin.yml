@@ -1,0 +1,17 @@
+name: BlueMiscExtension
+version: '${project.version}'
+main: net.mcblueice.bluemiscextension.BlueMiscExtension
+api-version: 1.20
+depend:
+  - ProtocolLib
+author: Blue
+description: 雜項擴展
+commands:
+  bluemiscextension:
+    description: BlueMiscExtension主指令
+    usage: /bluemiscextension <reload>
+
+permissions:
+  bluemiscextension.reload:
+    description: 允許使用 /bluemiscextension reload
+    default: op
