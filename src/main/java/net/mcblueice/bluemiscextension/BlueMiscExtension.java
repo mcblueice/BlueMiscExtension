@@ -4,11 +4,13 @@ import java.util.logging.Logger;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
+import net.mcblueice.bluemiscextension.features.DamageIndicatorLimiter;
+
 public class BlueMiscExtension extends JavaPlugin {
     private static BlueMiscExtension instance;
     private Logger logger;
     private boolean enableremoveDamageheart;
-    private NoDamageHeart noDamageHeart;
+    private DamageIndicatorLimiter noDamageHeart;
 
     public BlueMiscExtension() {
     }
@@ -47,12 +49,12 @@ public class BlueMiscExtension extends JavaPlugin {
             noDamageHeart = null;
         }
 
-        enableremoveDamageheart = getConfig().getBoolean("removeDamageheart.enable", true);
+        enableremoveDamageheart = getConfig().getBoolean("DamageIndicatorLimiter.enable", true);
 
         if (enableremoveDamageheart) {
             if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
                 getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §aProtocolLib 已啟用 已開啟 移除受傷愛心 功能！");
-                noDamageHeart = new NoDamageHeart(this);
+                noDamageHeart = new DamageIndicatorLimiter(this);
                 noDamageHeart.register();
             } else {
                 getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §cProtocolLib 未啟用 已關閉 移除受傷愛心 功能！");

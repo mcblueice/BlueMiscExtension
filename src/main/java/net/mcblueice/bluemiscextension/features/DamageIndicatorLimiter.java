@@ -1,4 +1,4 @@
-package net.mcblueice.bluemiscextension;
+package net.mcblueice.bluemiscextension.features;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -11,15 +11,15 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 
 
-public class NoDamageHeart {
+public class DamageIndicatorLimiter {
     private final JavaPlugin plugin;
     private int maxParticles;
     private boolean debuglog;
 
-    public NoDamageHeart(JavaPlugin plugin) {
+    public DamageIndicatorLimiter(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.maxParticles = plugin.getConfig().getInt("removeDamageheart.max-heart", 20);
-        this.debuglog = plugin.getConfig().getBoolean("removeDamageheart.debug-log", false);
+        this.maxParticles = plugin.getConfig().getInt("DamageIndicatorLimiter.max-heart", 20);
+        this.debuglog = plugin.getConfig().getBoolean("DamageIndicatorLimiter.debug-log", false);
     }
 
     public void register() {

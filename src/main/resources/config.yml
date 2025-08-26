@@ -1,4 +1,4 @@
-removeDamageheart:
+DamageIndicatorLimiter:
   enable: true
   max-heart: 20
   debug-log: false
