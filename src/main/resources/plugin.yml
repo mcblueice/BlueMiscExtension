@@ -9,7 +9,7 @@ description: 雜項擴展
 commands:
   bluemiscextension:
     description: BlueMiscExtension主指令
-    usage: /bluemiscextension <reload|debug>
+    usage: /bluemiscextension <reload|debug|workbench>
 
 permissions:
   bluemiscextension.reload:
@@ -17,4 +17,31 @@ permissions:
     default: op
   bluemiscextension.debug:
     description: 允許使用 /bluemiscextension debug
+    default: op
+  bluemiscextension.shulkerbox.open.hand:
+    description: 允許玩家以手持方式開啟界伏盒
+    default: op
+  bluemiscextension.shulkerbox.open.inventory:
+    description: 允許玩家以背包方式開啟界伏盒
+    default: op
+  bluemiscextension.workbench:
+    description: 允許使用 /bluemiscextension workbench 指令
+    default: op
+  bluemiscextension.workbench.workbench:
+    description: 允許使用 /bluemiscextension workbench workbench 指令
+    default: op
+  bluemiscextension.workbench.anvil:
+    description: 允許使用 /bluemiscextension workbench anvil 指令
+    default: op
+  bluemiscextension.workbench.grindstone:
+    description: 允許使用 /bluemiscextension workbench grindstone 指令
+    default: op
+  bluemiscextension.workbench.smithing:
+    description: 允許使用 /bluemiscextension workbench smithing 指令
+    default: op
+  bluemiscextension.workbench.cartography:
+    description: 允許使用 /bluemiscextension workbench cartography 指令
+    default: op
+  bluemiscextension.workbench.loom:
+    description: 允許使用 /bluemiscextension workbench loom 指令
     default: op

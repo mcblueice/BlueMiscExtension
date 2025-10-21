@@ -2,6 +2,7 @@ package net.mcblueice.bluemiscextension.features.ShulkerBox;
 
 import java.util.UUID;
 
+import org.bukkit.Sound;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -95,6 +96,8 @@ public class ShulkerBoxClose implements Listener {
         Inventory closedInv = event.getInventory();
         if (shulkerUuid == null || closedInv == null) return;
         if (closedInv.getType() == InventoryType.SHULKER_BOX) saveInventoryToItem(player, closedInv, shulkerUuid);
+        
+        player.playSound(player.getLocation(), Sound.BLOCK_SHULKER_BOX_CLOSE, 1f, 1f);
         manager.getOpenedShulkerBoxes().remove(uuid);
     }
 
