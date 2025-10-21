@@ -4,6 +4,7 @@ main: net.mcblueice.bluemiscextension.BlueMiscExtension
 api-version: 1.20
 depend:
   - ProtocolLib
+folia-supported: true
 author: Blue
 description: 雜項擴展
 commands:

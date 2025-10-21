@@ -19,6 +19,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import net.kyori.adventure.text.Component;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 
 public class ShulkerBoxOpen implements Listener {
@@ -91,10 +92,15 @@ public class ShulkerBoxOpen implements Listener {
         Inventory itemInv = ((InventoryHolder) itemBlockState).getInventory();
 
         TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+            Component title = Component.text("界伏盒");
+            if (itemMeta != null && itemMeta.displayName() != null) title = itemMeta.displayName();
+            Inventory cloneInv = manager.getPlugin().getServer().createInventory( player, itemInv.getSize(), title );
+            cloneInv.setContents(itemInv.getContents());
+
             UUID shulkerBoxUuid = ShulkerBoxUtil.getUUID(item);
             if (shulkerBoxUuid == null ) shulkerBoxUuid = ShulkerBoxUtil.addUUID(item);
             player.closeInventory();
-            player.openInventory(itemInv);
+            player.openInventory(cloneInv);
 
             manager.getPlugin().sendDebug("§e已為 §b" + player.getName() + " §e開啟界伏盒: §a" + shulkerBoxUuid);
             manager.getOpenedShulkerBoxes().put(uuid, shulkerBoxUuid);

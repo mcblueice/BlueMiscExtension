@@ -12,7 +12,6 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -40,8 +39,8 @@ public class ShulkerBoxClose implements Listener {
         if (shulkerBoxUuid == null) return;
 
         Inventory top = player.getOpenInventory().getTopInventory();
-        if (top == null) return;
-        if (top.getType() != InventoryType.SHULKER_BOX) return;
+        if (top == null || shulkerBoxUuid == null) return;
+        if (!(top.getHolder() instanceof Player) || !top.getHolder().equals(player)) return;
 
         int rawSlot = event.getRawSlot();
         boolean affectsTop = rawSlot >= 0 && rawSlot < top.getSize();
@@ -51,7 +50,9 @@ public class ShulkerBoxClose implements Listener {
         }
         if (!affectsTop) return;
 
-        saveInventoryToItem(player, top, shulkerBoxUuid);
+        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+            saveInventoryToItem(player, top, shulkerBoxUuid);
+        });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -64,9 +65,8 @@ public class ShulkerBoxClose implements Listener {
         if (shulkerUuid == null) return;
 
         Inventory top = player.getOpenInventory() != null ? player.getOpenInventory().getTopInventory() : null;
-        if (top == null) return;
-        InventoryType topType = top.getType();
-        if (topType != InventoryType.SHULKER_BOX) return;
+        if (top == null || shulkerUuid == null) return;
+        if (!(top.getHolder() instanceof Player) || !top.getHolder().equals(player)) return;
 
         boolean affectsTop = false;
         for (int rawSlot : event.getRawSlots()) {
@@ -77,7 +77,9 @@ public class ShulkerBoxClose implements Listener {
         }
         if (!affectsTop) return;
 
-        saveInventoryToItem(player, top, shulkerUuid);
+        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+            saveInventoryToItem(player, top, shulkerUuid);
+        });
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -94,14 +96,20 @@ public class ShulkerBoxClose implements Listener {
         UUID uuid = player.getUniqueId();
         UUID shulkerUuid = manager.getOpenedShulkerBoxes().get(uuid);
         Inventory closedInv = event.getInventory();
+        
         if (shulkerUuid == null || closedInv == null) return;
-        if (closedInv.getType() == InventoryType.SHULKER_BOX) saveInventoryToItem(player, closedInv, shulkerUuid);
+        if (!(closedInv.getHolder() instanceof Player) || !closedInv.getHolder().equals(player)) return;
+        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+            saveInventoryToItem(player, closedInv, shulkerUuid);
+        });
         
         player.playSound(player.getLocation(), Sound.BLOCK_SHULKER_BOX_CLOSE, 1f, 1f);
         manager.getOpenedShulkerBoxes().remove(uuid);
     }
 
     private void saveInventoryToItem(Player player, Inventory inv, UUID shulkerUuid) {
+        manager.getPlugin().sendDebug("§e開始保存界伏盒內容: " + shulkerUuid);
+        
         if (player == null || inv == null || shulkerUuid == null) return;
 
         ItemStack shulkerBoxItem = null;
@@ -135,9 +143,10 @@ public class ShulkerBoxClose implements Listener {
         Inventory holderInv = ((InventoryHolder) blockState).getInventory();
         
         holderInv.setContents(inv.getContents());
-
         blockMeta.setBlockState(blockState);
         shulkerBoxItem.setItemMeta(blockMeta);
-        TaskScheduler.runTaskLater(player, manager.getPlugin(), () -> player.updateInventory(), 1);
+
+        player.updateInventory();
+        manager.getPlugin().sendDebug("§a成功保存界伏盒內容: " + shulkerUuid);
     }
 }
