@@ -9,9 +9,12 @@ description: 雜項擴展
 commands:
   bluemiscextension:
     description: BlueMiscExtension主指令
-    usage: /bluemiscextension <reload>
+    usage: /bluemiscextension <reload|debug>
 
 permissions:
   bluemiscextension.reload:
     description: 允許使用 /bluemiscextension reload
+    default: op
+  bluemiscextension.debug:
+    description: 允許使用 /bluemiscextension debug
     default: op

@@ -1,51 +1,45 @@
 package net.mcblueice.bluemiscextension.features;
 
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.Particle;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.WrappedParticle;
+
+import net.mcblueice.bluemiscextension.BlueMiscExtension;
 
 
 public class DamageIndicatorLimiter {
-    private final JavaPlugin plugin;
-    private int maxParticles;
-    private boolean debuglog;
+	private final BlueMiscExtension plugin;
 
-    public DamageIndicatorLimiter(JavaPlugin plugin) {
-        this.plugin = plugin;
-        this.maxParticles = plugin.getConfig().getInt("DamageIndicatorLimiter.max-heart", 20);
-        this.debuglog = plugin.getConfig().getBoolean("DamageIndicatorLimiter.debug-log", false);
-    }
+	public DamageIndicatorLimiter(BlueMiscExtension plugin) {
+		this.plugin = plugin;
+	}
 
     public void register() {
-    ProtocolManager manager = ProtocolLibrary.getProtocolManager();
-    manager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.WORLD_PARTICLES) {
+        ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+        manager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL,PacketType.Play.Server.WORLD_PARTICLES) {
+            int maxParticles = plugin.getConfig().getInt("Features.DamageIndicatorLimiter.max_amount", 20);
+
             @Override
             public void onPacketSending(PacketEvent event) {
-                try {
-                    Object param = event.getPacket().getModifier().read(9);
-                    Player player = event.getPlayer();
-                    if (param != null) {
-                        if (param.getClass().getMethod("a").invoke(param).equals("minecraft:damage_indicator")) {
-                            int count = event.getPacket().getIntegers().read(0);
-                            int actualCount = (count == 0) ? 1 : count;
-                            if (actualCount > maxParticles) {
-                                event.getPacket().getIntegers().write(0, maxParticles);
-                                if (debuglog) plugin.getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §b已將 §a" + player.getName() + " §b的 §edamage_indicator §b粒子數量由 §6" + actualCount + " §b調整為 §6" + maxParticles);
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {}
+                PacketContainer packet = event.getPacket().deepClone();
+                WrappedParticle<?> wrappedParticle = packet.getNewParticles().readSafely(0);
+                Particle particle = wrappedParticle.getParticle();
+                int count = packet.getIntegers().readSafely(0);
+                if (particle == Particle.DAMAGE_INDICATOR && count > maxParticles) {
+                    packet.getIntegers().writeSafely(0, maxParticles);
+                    event.setPacket(packet);
+                    DamageIndicatorLimiter.this.plugin.sendDebug("§e已將 §b" + event.getPlayer().getName() + " §e的 §6" + particle.name() + " §e粒子數量由 §6" + count + " §e調整為 §6" + maxParticles);
+                }
             }
         });
     }
     
-    public void unregister() {
-        ProtocolLibrary.getProtocolManager().removePacketListeners(plugin);
-    }
+    public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
 }

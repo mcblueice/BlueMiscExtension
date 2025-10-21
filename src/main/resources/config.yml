@@ -1,11 +1,19 @@
 Database:
+  # type: sqlite, MySQL
   type: sqlite
-  host: localhost
-  port: 3306
-  database: database
-  user: user
-  password: password
-DamageIndicatorLimiter:
-  enable: true
-  max-heart: 20
-  debug-log: false
+  MySQL:
+    host: localhost
+    port: 3306
+    database: database
+    user: user
+    password: password
+Features:
+  AbsorptionScale:
+    enable: true
+    max_amount: 20
+  DamageIndicatorLimiter:
+    enable: true
+    max_amount: 20
+  ShulkerBox:
+    enable: true
+    cooldown: 1000
