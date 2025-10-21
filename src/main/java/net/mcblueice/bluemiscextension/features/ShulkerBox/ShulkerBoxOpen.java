@@ -94,7 +94,7 @@ public class ShulkerBoxOpen implements Listener {
         TaskScheduler.runTask(player, manager.getPlugin(), () -> {
             Component title = Component.text("界伏盒");
             if (itemMeta != null && itemMeta.displayName() != null) title = itemMeta.displayName();
-            Inventory cloneInv = manager.getPlugin().getServer().createInventory( player, itemInv.getSize(), title );
+            Inventory cloneInv = manager.getPlugin().getServer().createInventory( player, InventoryType.SHULKER_BOX, title );
             cloneInv.setContents(itemInv.getContents());
 
             UUID shulkerBoxUuid = ShulkerBoxUtil.getUUID(item);

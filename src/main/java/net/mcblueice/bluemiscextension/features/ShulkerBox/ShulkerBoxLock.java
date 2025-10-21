@@ -23,30 +23,28 @@ public class ShulkerBoxLock implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
         ItemStack clickItem = event.getCurrentItem();
-        if (clickItem == null) return;
-        if (!clickItem.getType().name().contains("SHULKER_BOX")) return;
-
         UUID uuid = player.getUniqueId();
         UUID shulkerBoxUuid = manager.getOpenedShulkerBoxes().get(uuid);
+        if (shulkerBoxUuid == null) return;
         UUID itemUuid = ShulkerBoxUtil.getUUID(clickItem);
-
-        if (itemUuid != null && itemUuid.equals(shulkerBoxUuid)) {
-            event.setCancelled(true);
-            return;
-        }
-
         if (event.getClick() == ClickType.NUMBER_KEY) {
             int hotbarButton = event.getHotbarButton();
             ItemStack hotbarItem = player.getInventory().getItem(hotbarButton);
-            if (hotbarItem == null) return;
-            if (!hotbarItem.getType().name().contains("SHULKER_BOX")) return;
+            if (clickItem == null && hotbarItem == null) return;
+            if (!((hotbarItem != null && hotbarItem.getType().name().contains("SHULKER_BOX")) || (clickItem != null && clickItem.getType().name().contains("SHULKER_BOX")))) return;
             UUID hotbarItemUuid = ShulkerBoxUtil.getUUID(hotbarItem);
             if (hotbarItemUuid != null && hotbarItemUuid.equals(shulkerBoxUuid)) {
                 event.setCancelled(true);
                 return;
             }
         }
-        return;
+        if (clickItem == null) return;
+        if (!clickItem.getType().name().contains("SHULKER_BOX")) return;
+
+        if (itemUuid != null && itemUuid.equals(shulkerBoxUuid)) {
+            event.setCancelled(true);
+            return;
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -55,6 +53,7 @@ public class ShulkerBoxLock implements Listener {
         Player player = (Player) event.getWhoClicked();
         UUID uuid = player.getUniqueId();
         UUID shulkerBoxUuid = manager.getOpenedShulkerBoxes().get(uuid);
+        if (shulkerBoxUuid == null) return;
         for (ItemStack item : event.getNewItems().values()) {
             if (item == null) continue;
             if (!item.getType().name().contains("SHULKER_BOX")) continue;
@@ -64,6 +63,5 @@ public class ShulkerBoxLock implements Listener {
                 return;
             }
         }
-        return;
     }
 }

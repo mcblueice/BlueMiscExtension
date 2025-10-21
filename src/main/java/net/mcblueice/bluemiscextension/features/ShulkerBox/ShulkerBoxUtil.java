@@ -23,6 +23,7 @@ public final class ShulkerBoxUtil {
     }
 
     public static UUID getUUID(ItemStack item) {
+        if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return null;
         String uuid = meta.getPersistentDataContainer().get(key(), PersistentDataType.STRING);
@@ -31,7 +32,9 @@ public final class ShulkerBoxUtil {
     }
 
     public static UUID addUUID(ItemStack item) {
+        if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
+        if (meta == null) return null;
         UUID uuid = UUID.randomUUID();
         meta.getPersistentDataContainer().set(key(), PersistentDataType.STRING, uuid.toString());
         item.setItemMeta(meta);
@@ -39,7 +42,9 @@ public final class ShulkerBoxUtil {
     }
 
     public static void removeUUID(ItemStack item) {
+        if (item == null) return;
         ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
         meta.getPersistentDataContainer().remove(key());
         item.setItemMeta(meta); 
     }
