@@ -38,6 +38,10 @@ public class VirtualWorkbench {
                 player.openLoom(player.getLocation(), true);
                 plugin.sendDebug("已為玩家開啟紡織機: " + player.getName());
                 break;
+            case "ENDERCHEST":
+                player.openInventory(player.getEnderChest());
+                plugin.sendDebug("已為玩家開啟終界箱: " + player.getName());
+                break;
             default:
                 player.sendMessage("§c未知的工作站類型: " + station);
                 break;

@@ -106,6 +106,13 @@ public class Commands implements CommandExecutor, TabCompleter {
                             }
                             new VirtualWorkbench(plugin).open(player, "LOOM");
                             return true;
+                        case "ENDERCHEST":
+                            if (!player.hasPermission("bluemiscextension.workbench.enderchest")) {
+                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
+                                return true;
+                            }
+                            new VirtualWorkbench(plugin).open(player, "ENDERCHEST");
+                            return true;
                         default:
                             player.sendMessage(lang.get("Prefix") + "§c用法錯誤!");
                             return true;
@@ -141,6 +148,7 @@ public class Commands implements CommandExecutor, TabCompleter {
             if (sender.hasPermission("bluemiscextension.workbench.smithing")) subs.add("SMITHING");
             if (sender.hasPermission("bluemiscextension.workbench.cartography")) subs.add("CARTOGRAPHY");
             if (sender.hasPermission("bluemiscextension.workbench.loom")) subs.add("LOOM");
+            if (sender.hasPermission("bluemiscextension.workbench.enderchest")) subs.add("ENDERCHEST");
             StringUtil.copyPartialMatches(args[1], subs, completions);
             Collections.sort(completions);
             return completions;

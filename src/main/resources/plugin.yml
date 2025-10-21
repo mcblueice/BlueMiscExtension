@@ -45,3 +45,6 @@ permissions:
   bluemiscextension.workbench.loom:
     description: 允許使用 /bluemiscextension workbench loom 指令
     default: op
+  bluemiscextension.workbench.enderchest:
+    description: 允許使用 /bluemiscextension workbench enderchest 指令
+    default: op

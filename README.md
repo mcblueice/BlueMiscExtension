@@ -28,6 +28,7 @@
 | SMITHING | 鍛造台 | `bluemiscextension.workbench.smithing` |
 | CARTOGRAPHY | 製圖台 | `bluemiscextension.workbench.cartography` |
 | LOOM | 紡織機 | `bluemiscextension.workbench.loom` |
+| ENDERCHEST | 終界箱 | `bluemiscextension.workbench.enderchest` |
 
 
 ## 授權 License
