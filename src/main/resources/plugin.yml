@@ -19,12 +19,6 @@ permissions:
   bluemiscextension.debug:
     description: 允許使用 /bluemiscextension debug
     default: op
-  bluemiscextension.shulkerbox.open.hand:
-    description: 允許玩家以手持方式開啟界伏盒
-    default: op
-  bluemiscextension.shulkerbox.open.inventory:
-    description: 允許玩家以背包方式開啟界伏盒
-    default: op
   bluemiscextension.workbench:
     description: 允許使用 /bluemiscextension workbench 指令
     default: op
@@ -48,4 +42,13 @@ permissions:
     default: op
   bluemiscextension.workbench.enderchest:
     description: 允許使用 /bluemiscextension workbench enderchest 指令
+    default: op
+  bluemiscextension.shulkerbox.open.hand:
+    description: 允許玩家以手持方式開啟界伏盒
+    default: op
+  bluemiscextension.shulkerbox.open.inventory:
+    description: 允許玩家以背包方式開啟界伏盒
+    default: op
+  bluemiscextension.lightblock:
+    description: 允許生存模式使用光源方塊
     default: op

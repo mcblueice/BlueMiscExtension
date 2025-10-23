@@ -17,6 +17,8 @@ import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 import net.mcblueice.bluemiscextension.features.AbsorptionScale;
 import net.mcblueice.bluemiscextension.features.DamageIndicatorLimiter;
 import net.mcblueice.bluemiscextension.features.ShulkerBox.ShulkerBox;
+import net.mcblueice.bluemiscextension.features.Elevator;
+import net.mcblueice.bluemiscextension.features.LightBlock;
 
 public class BlueMiscExtension extends JavaPlugin {
     private static BlueMiscExtension instance;
@@ -24,9 +26,13 @@ public class BlueMiscExtension extends JavaPlugin {
     private boolean enableDamageIndicatorLimiter;
     private boolean enableAbsorptionScale;
     private boolean enableShulkerBox;
+    private boolean enableElevator;
+    private boolean enableLightBlock;
     private DamageIndicatorLimiter damageIndicatorLimiter;
     private AbsorptionScale absorptionScale;
     private ShulkerBox shulkerBox;
+    private Elevator elevator;
+    private LightBlock lightBlock;
     private DatabaseUtil databaseUtil;
     private ConfigManager lang;
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
@@ -74,6 +80,8 @@ public class BlueMiscExtension extends JavaPlugin {
         enableDamageIndicatorLimiter = getConfig().getBoolean("Features.DamageIndicatorLimiter.enable", false);
         enableAbsorptionScale = getConfig().getBoolean("Features.AbsorptionScale.enable", false);
         enableShulkerBox = getConfig().getBoolean("Features.ShulkerBox.enable", false);
+        enableElevator = getConfig().getBoolean("Features.Elevator.enable", false);
+        enableLightBlock = getConfig().getBoolean("Features.LightBlock.enable", false);
 
         boolean hasProtocolLib = getServer().getPluginManager().getPlugin("ProtocolLib") != null;
 
@@ -108,6 +116,22 @@ public class BlueMiscExtension extends JavaPlugin {
         } else {
             getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c界伏盒 功能已關閉");
         }
+
+        if (enableElevator) {
+            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §a已開啟 電梯 功能!");
+            elevator = new Elevator(this);
+            elevator.register();
+        } else {
+            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c電梯 功能已關閉");
+        }
+
+        if (enableLightBlock) {
+            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §a已開啟 光源方塊 功能!");
+            lightBlock = new LightBlock(this);
+            lightBlock.register();
+        } else {
+            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c光源方塊 功能已關閉");
+        }
     }
 
     private void unregisterFeatures() {
@@ -122,6 +146,14 @@ public class BlueMiscExtension extends JavaPlugin {
         if (shulkerBox != null) {
             shulkerBox.unregister();
             shulkerBox = null;
+        }
+        if (elevator != null) {
+            elevator.unregister();
+            elevator = null;
+        }
+        if (lightBlock != null) {
+            lightBlock.unregister();
+            lightBlock = null;
         }
     }
 

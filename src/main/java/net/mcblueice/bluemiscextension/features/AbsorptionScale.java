@@ -6,7 +6,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Listener;
 
 import com.comphenix.protocol.PacketType;
@@ -40,10 +39,9 @@ public class AbsorptionScale implements Listener {
 			public void onPacketSending(PacketEvent event) {
 				PacketContainer packet = event.getPacket().deepClone();
 				Player viewer = event.getPlayer();
-				Entity target = packet.getEntityModifier(viewer.getWorld()).readSafely(0);
-				if (!(target instanceof Player)) return;
-				if (!(viewer == (Player) target)) return;
-				Player player = (Player) target;
+				Integer entityId = packet.getIntegers().readSafely(0);
+				if (entityId == null || entityId != viewer.getEntityId()) return;
+				Player player = viewer;
 				UUID uuid = player.getUniqueId();
 
 				List<WrappedDataValue> dataList = packet.getDataValueCollectionModifier().readSafely(0);

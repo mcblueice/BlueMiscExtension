@@ -17,3 +17,11 @@ Features:
   ShulkerBox:
     enable: true
     cooldown: 1000
+  Elevator:
+    enable: true
+    elevators:
+      - 'QUARTZ_BLOCK, REDSTONE_BLOCK'
+      - 'WHITE_CARPET, WHITE_WOOL'
+    max_distance: 64
+  LightBlock:
+    enable: true
