@@ -10,7 +10,7 @@ description: 雜項擴展
 commands:
   bluemiscextension:
     description: BlueMiscExtension主指令
-    usage: /bluemiscextension <reload|debug|workbench>
+    usage: /bluemiscextension <reload|debug|workbench|armorhide>
 
 permissions:
   bluemiscextension.reload:
@@ -42,6 +42,9 @@ permissions:
     default: op
   bluemiscextension.workbench.enderchest:
     description: 允許使用 /bluemiscextension workbench enderchest 指令
+    default: op
+  bluemiscextension.armorhide:
+    description: 允許使用 /bluemiscextension armorhide 指令
     default: op
   bluemiscextension.shulkerbox.open.hand:
     description: 允許玩家以手持方式開啟界伏盒

@@ -14,14 +14,17 @@ import org.bukkit.util.StringUtil;
 
 import net.mcblueice.bluemiscextension.features.VirtualWorkbench;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
+import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
 
 public class Commands implements CommandExecutor, TabCompleter {
     private final BlueMiscExtension plugin;
     private final ConfigManager lang;
+    private final DatabaseUtil databaseUtil;
 
     public Commands(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.lang = plugin.getLanguageManager();
+        this.databaseUtil = plugin.getDatabaseUtil();
     }
 
     @Override
@@ -52,6 +55,25 @@ public class Commands implements CommandExecutor, TabCompleter {
                         boolean stat = plugin.toggleDebugMode(new UUID(0L, 0L));
                         sender.sendMessage(lang.get("Prefix") + "§6Debug模式" + (stat ? "§a已開啟" : "§c已關閉"));
                     }
+                    return true;
+                case "ARMORHIDE":
+                    if (!(sender instanceof Player)) {
+                        sender.sendMessage(lang.get("Prefix") + "§c此指令僅限玩家使用!");
+                        return true;
+                    }
+                    player = (Player) sender;
+                    if (!player.hasPermission("bluemiscextension.armorhide")) {
+                        player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
+                        return true;
+                    }
+                    if (plugin.getArmorHide() == null) {
+                        player.sendMessage(lang.get("Prefix") + "§c裝備隱形功能未啟用!");
+                        return true;
+                    }
+                    boolean newState = !databaseUtil.getArmorHiddenState(player.getUniqueId());
+                    databaseUtil.setArmorHiddenState(player.getUniqueId(), newState);
+                    plugin.getArmorHide().updatePlayer(player);
+                    player.sendMessage(lang.get("Prefix") + "§6裝備隱形功能已" + (newState ? "§a啟用" : "§c關閉"));
                     return true;
                 case "WORKBENCH":
                     if (!(sender instanceof Player)) {
@@ -135,6 +157,7 @@ public class Commands implements CommandExecutor, TabCompleter {
             if (sender.hasPermission("bluemiscextension.reload")) subs.add("reload");
             if (sender.hasPermission("bluemiscextension.debug")) subs.add("debug");
             if (sender.hasPermission("bluemiscextension.workbench")) subs.add("workbench");
+            if (sender.hasPermission("bluemiscextension.armorhide")) subs.add("armorhide");
             StringUtil.copyPartialMatches(args[0], subs, completions);
             Collections.sort(completions);
             return completions;

@@ -11,6 +11,7 @@
 - 開啟虛擬工作台
 - 生存模式放置/破壞/調整光源方塊
 - 電梯功能
+- 盔甲隱身功能
 
 ## 指令列表
 
@@ -18,6 +19,7 @@
 |------|------|------|
 | `/bluemiscextension reload` | 重新載入 `config.yml` 與 `lang.yml` | `bluemiscextension.reload` |
 | `/bluemiscextension debug` | 切換偵錯訊息顯示（玩家或主控台） | `bluemiscextension.debug` |
+| `/bluemiscextension armorhide` | 切換盔甲隱身狀態 | `bluemiscextension.armorhide` |
 | `/bluemiscextension workbench <type>` | 開啟虛擬工作台 | `bluemiscextension.workbench`（子權限見下方） |
 
 ### workbench 類型與權限
@@ -39,6 +41,5 @@
 
 ## TODO
 
-新增盔甲隱身功能
 新增告示牌顏色功能
 新增盔甲架修改功能

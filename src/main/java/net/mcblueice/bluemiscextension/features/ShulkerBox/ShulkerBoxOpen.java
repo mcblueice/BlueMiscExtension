@@ -53,6 +53,10 @@ public class ShulkerBoxOpen implements Listener {
         Player player = (Player) event.getWhoClicked();
         if (event.getClick() != ClickType.SHIFT_RIGHT) return;
         if (!player.hasPermission("bluemiscextension.shulkerbox.open.inventory")) return;
+
+        if (event.getClickedInventory() == null || !event.getClickedInventory().equals(player.getInventory())) return;
+        if (event.getSlot() >= 36 && event.getSlot() <= 39) return;
+
         ItemStack clickItem = event.getCurrentItem();
         if (clickItem == null) return;
         if (!clickItem.getType().name().contains("SHULKER_BOX")) return;

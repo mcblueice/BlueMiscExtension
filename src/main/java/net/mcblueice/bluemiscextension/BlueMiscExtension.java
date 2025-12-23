@@ -19,17 +19,20 @@ import net.mcblueice.bluemiscextension.features.DamageIndicatorLimiter;
 import net.mcblueice.bluemiscextension.features.ShulkerBox.ShulkerBox;
 import net.mcblueice.bluemiscextension.features.Elevator;
 import net.mcblueice.bluemiscextension.features.LightBlock;
+import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
 
 public class BlueMiscExtension extends JavaPlugin {
     private static BlueMiscExtension instance;
     private Logger logger;
     private boolean enableDamageIndicatorLimiter;
     private boolean enableAbsorptionScale;
+    private boolean enableArmorHide;
     private boolean enableShulkerBox;
     private boolean enableElevator;
     private boolean enableLightBlock;
     private DamageIndicatorLimiter damageIndicatorLimiter;
     private AbsorptionScale absorptionScale;
+    private ArmorHide armorHide;
     private ShulkerBox shulkerBox;
     private Elevator elevator;
     private LightBlock lightBlock;
@@ -79,6 +82,7 @@ public class BlueMiscExtension extends JavaPlugin {
 
         enableDamageIndicatorLimiter = getConfig().getBoolean("Features.DamageIndicatorLimiter.enable", false);
         enableAbsorptionScale = getConfig().getBoolean("Features.AbsorptionScale.enable", false);
+        enableArmorHide = getConfig().getBoolean("Features.ArmorHide.enable", false);
         enableShulkerBox = getConfig().getBoolean("Features.ShulkerBox.enable", false);
         enableElevator = getConfig().getBoolean("Features.Elevator.enable", false);
         enableLightBlock = getConfig().getBoolean("Features.LightBlock.enable", false);
@@ -107,6 +111,18 @@ public class BlueMiscExtension extends JavaPlugin {
             }
         } else {
             getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c吸收血量縮放 功能已關閉");
+        }
+
+        if (enableArmorHide) {
+            if (hasProtocolLib) {
+                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §aProtocolLib 已啟用 已開啟 裝備隱形 功能!");
+                armorHide = new ArmorHide(this);
+                armorHide.register();
+            } else {
+                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §cProtocolLib 未啟用 已關閉 裝備隱形 功能!");
+            }
+        } else {
+            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c裝備隱形 功能已關閉");
         }
 
         if (enableShulkerBox) {
@@ -142,6 +158,10 @@ public class BlueMiscExtension extends JavaPlugin {
         if (absorptionScale != null) {
             absorptionScale.unregister();
             absorptionScale = null;
+        }
+        if (armorHide != null) {
+            armorHide.unregister();
+            armorHide = null;
         }
         if (shulkerBox != null) {
             shulkerBox.unregister();
@@ -191,4 +211,5 @@ public class BlueMiscExtension extends JavaPlugin {
 
     public DatabaseUtil getDatabaseUtil() { return databaseUtil; }
     public ConfigManager getLanguageManager() { return lang; }
+    public ArmorHide getArmorHide() { return armorHide; }
 }
