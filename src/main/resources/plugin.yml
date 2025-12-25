@@ -1,9 +1,10 @@
 name: BlueMiscExtension
 version: '${project.version}'
 main: net.mcblueice.bluemiscextension.BlueMiscExtension
-api-version: 1.20
-depend:
+api-version: 1.21
+softdepend:
   - ProtocolLib
+  - PlaceholderAPI
 folia-supported: true
 author: Blue
 description: 雜項擴展

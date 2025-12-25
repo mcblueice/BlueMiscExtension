@@ -1,4 +1,44 @@
 Prefix: "&7&l[&e&l雜項&7&l]&r"
+
+# 通用訊息
+NoPermission: "&c你沒有權限使用此指令!"
+OnlyPlayer: "&c此指令僅限玩家使用!"
+UsageError: "&c用法錯誤!"
+ReloadSuccess: "&aConfig已重新加載"
+DebugEnabled: "&6Debug模式&a已開啟"
+DebugDisabled: "&6Debug模式&c已關閉"
+
+# 功能管理器
+FeatureManager:
+  Enabled: "%{1}已開啟 %{2} 功能!"
+  Disabled: "%{1}已關閉 %{2} 功能!"
+  Closed: "&c%{1} 功能已關閉"
+  Dependency:
+    Enabled: "&a%{1} 已啟用 "
+    Missing: "&c%{1} 未啟用 "
+
+# 功能名稱
+FeatureName:
+  DamageIndicatorLimiter: "傷害顯示限制"
+  AbsorptionScale: "吸收傷害顯示"
+  ArmorHide: "裝備隱形"
+  ShulkerBox: "界伏盒預覽"
+  Elevator: "電梯"
+  LightBlock: "光源方塊"
+  VirtualWorkbench: "虛擬工作站"
+  PlaceholderAPI: "佔位符"
+
+# 虛擬工作站
+VirtualWorkbench:
+  NotEnabled: "&c虛擬工作站功能未啟用!"
+  UnknownStation: "&c未知的工作站類型: %{1}"
+
+# 裝備隱形
+ArmorHideFeature:
+  NotEnabled: "&c裝備隱形功能未啟用!"
+  ToggleOn: "&6裝備隱形功能已&a啟用"
+  ToggleOff: "&6裝備隱形功能已&c關閉"
+
 ArmorHide:
   Durability: "&f耐久度：&f%{1}&f/&f%{2}"
   ArmorNames:

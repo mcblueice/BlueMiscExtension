@@ -12,18 +12,22 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import net.mcblueice.bluemiscextension.features.VirtualWorkbench;
+import net.mcblueice.bluemiscextension.features.VirtualWorkbench.VirtualWorkbench;
+import net.mcblueice.bluemiscextension.features.FeatureManager;
+import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
 
 public class Commands implements CommandExecutor, TabCompleter {
     private final BlueMiscExtension plugin;
     private final ConfigManager lang;
+    private final FeatureManager featureManager;
     private final DatabaseUtil databaseUtil;
 
     public Commands(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.lang = plugin.getLanguageManager();
+        this.featureManager = plugin.getFeatureManager();
         this.databaseUtil = plugin.getDatabaseUtil();
     }
 
@@ -34,117 +38,79 @@ public class Commands implements CommandExecutor, TabCompleter {
             switch (args[0].toUpperCase()) {
                 case "RELOAD":
                     if (!sender.hasPermission("bluemiscextension.reload")) {
-                        sender.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
+                        sender.sendMessage(lang.get("Prefix") + lang.get("NoPermission"));
                         return true;
                     }
                     plugin.reloadConfig();
-                    plugin.getLanguageManager().reload();
-                    plugin.refreshFeatures();
-                    sender.sendMessage(lang.get("Prefix") + "§aConfig已重新加載");
+                    lang.reload();
+                    featureManager.reload();
+                    sender.sendMessage(lang.get("Prefix") + lang.get("ReloadSuccess"));
                     return true;
                 case "DEBUG":
                     if (!sender.hasPermission("bluemiscextension.debug")) {
-                        sender.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
+                        sender.sendMessage(lang.get("Prefix") + lang.get("NoPermission"));
                         return true;
                     }
                     if (sender instanceof Player) {
                         player = (Player) sender;
                         boolean stat = plugin.toggleDebugMode(player.getUniqueId());
-                        sender.sendMessage(lang.get("Prefix") + "§6Debug模式" + (stat ? "§a已開啟" : "§c已關閉"));
+                        sender.sendMessage(lang.get("Prefix") + lang.get(stat ? "DebugEnabled" : "DebugDisabled"));
                     } else {
                         boolean stat = plugin.toggleDebugMode(new UUID(0L, 0L));
-                        sender.sendMessage(lang.get("Prefix") + "§6Debug模式" + (stat ? "§a已開啟" : "§c已關閉"));
+                        sender.sendMessage(lang.get("Prefix") + lang.get(stat ? "DebugEnabled" : "DebugDisabled"));
                     }
                     return true;
                 case "ARMORHIDE":
                     if (!(sender instanceof Player)) {
-                        sender.sendMessage(lang.get("Prefix") + "§c此指令僅限玩家使用!");
+                        sender.sendMessage(lang.get("Prefix") + lang.get("OnlyPlayer"));
                         return true;
                     }
                     player = (Player) sender;
                     if (!player.hasPermission("bluemiscextension.armorhide")) {
-                        player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
+                        player.sendMessage(lang.get("Prefix") + lang.get("NoPermission"));
                         return true;
                     }
-                    if (plugin.getArmorHide() == null) {
-                        player.sendMessage(lang.get("Prefix") + "§c裝備隱形功能未啟用!");
+
+                    ArmorHide armorHide = featureManager.getFeature(ArmorHide.class);
+                    if (armorHide == null) {
+                        player.sendMessage(lang.get("Prefix") + lang.get("ArmorHideFeature.NotEnabled"));
                         return true;
                     }
                     boolean newState = !databaseUtil.getArmorHiddenState(player.getUniqueId());
                     databaseUtil.setArmorHiddenState(player.getUniqueId(), newState);
-                    plugin.getArmorHide().updatePlayer(player);
-                    player.sendMessage(lang.get("Prefix") + "§6裝備隱形功能已" + (newState ? "§a啟用" : "§c關閉"));
+                    armorHide.updatePlayer(player);
+                    player.sendMessage(lang.get("Prefix") + lang.get(newState ? "ArmorHideFeature.ToggleOn" : "ArmorHideFeature.ToggleOff"));
                     return true;
                 case "WORKBENCH":
                     if (!(sender instanceof Player)) {
-                        sender.sendMessage(lang.get("Prefix") + "§c此指令僅限玩家使用!");
+                        sender.sendMessage(lang.get("Prefix") + lang.get("OnlyPlayer"));
                         return true;
                     }
                     player = (Player) sender;
                     if (args.length < 2) {
-                        sender.sendMessage(lang.get("Prefix") + "§c用法錯誤!");
+                        sender.sendMessage(lang.get("Prefix") + lang.get("UsageError"));
                         return true;
                     }
-                    switch (args[1].toUpperCase()) {
-                        case "WORKBENCH":
-                            if (!player.hasPermission("bluemiscextension.workbench.workbench")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "WORKBENCH");
-                            return true;
-                        case "ANVIL":
-                            if (!player.hasPermission("bluemiscextension.workbench.anvil")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "ANVIL");
-                            return true;
-                        case "GRINDSTONE":
-                            if (!player.hasPermission("bluemiscextension.workbench.grindstone")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "GRINDSTONE");
-                            return true;
-                        case "SMITHING":
-                            if (!player.hasPermission("bluemiscextension.workbench.smithing")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "SMITHING");
-                            return true;
-                        case "CARTOGRAPHY":
-                            if (!player.hasPermission("bluemiscextension.workbench.cartography")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "CARTOGRAPHY");
-                            return true;
-                        case "LOOM":
-                            if (!player.hasPermission("bluemiscextension.workbench.loom")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "LOOM");
-                            return true;
-                        case "ENDERCHEST":
-                            if (!player.hasPermission("bluemiscextension.workbench.enderchest")) {
-                                player.sendMessage(lang.get("Prefix") + "§c你沒有權限使用此指令!");
-                                return true;
-                            }
-                            new VirtualWorkbench(plugin).open(player, "ENDERCHEST");
-                            return true;
-                        default:
-                            player.sendMessage(lang.get("Prefix") + "§c用法錯誤!");
-                            return true;
+
+                    VirtualWorkbench workbench = featureManager.getFeature(VirtualWorkbench.class);
+                    if (workbench == null) {
+                        player.sendMessage(lang.get("Prefix") + lang.get("VirtualWorkbench.NotEnabled"));
+                        return true;
+                    }
+                    String workbenchType = args[1].toLowerCase();
+                    if (!player.hasPermission("bluemiscextension.workbench." + workbenchType)) {
+                        player.sendMessage(lang.get("Prefix") + lang.get("NoPermission"));
+                        return true;
+                    } else {
+                        workbench.open(player, workbenchType);
+                        return true;
                     }
                 default:
-                    sender.sendMessage(lang.get("Prefix") + "§c用法錯誤!");
+                    sender.sendMessage(lang.get("Prefix") + lang.get("UsageError"));
                     return true;
             }
         }
-        sender.sendMessage(lang.get("Prefix") + "§c用法錯誤!");
+        sender.sendMessage(lang.get("Prefix") + lang.get("UsageError"));
         return true;
     }
 
@@ -156,8 +122,8 @@ public class Commands implements CommandExecutor, TabCompleter {
             List<String> subs = new ArrayList<>();
             if (sender.hasPermission("bluemiscextension.reload")) subs.add("reload");
             if (sender.hasPermission("bluemiscextension.debug")) subs.add("debug");
-            if (sender.hasPermission("bluemiscextension.workbench")) subs.add("workbench");
-            if (sender.hasPermission("bluemiscextension.armorhide")) subs.add("armorhide");
+            if (sender.hasPermission("bluemiscextension.workbench") && featureManager.isFeatureEnabled(VirtualWorkbench.class)) subs.add("workbench");
+            if (sender.hasPermission("bluemiscextension.armorhide") && featureManager.isFeatureEnabled(ArmorHide.class)) subs.add("armorhide");
             StringUtil.copyPartialMatches(args[0], subs, completions);
             Collections.sort(completions);
             return completions;

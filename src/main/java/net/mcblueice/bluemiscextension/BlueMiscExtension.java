@@ -14,28 +14,12 @@ import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
-import net.mcblueice.bluemiscextension.features.AbsorptionScale;
-import net.mcblueice.bluemiscextension.features.DamageIndicatorLimiter;
-import net.mcblueice.bluemiscextension.features.ShulkerBox.ShulkerBox;
-import net.mcblueice.bluemiscextension.features.Elevator;
-import net.mcblueice.bluemiscextension.features.LightBlock;
-import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
+import net.mcblueice.bluemiscextension.features.FeatureManager;
 
 public class BlueMiscExtension extends JavaPlugin {
     private static BlueMiscExtension instance;
     private Logger logger;
-    private boolean enableDamageIndicatorLimiter;
-    private boolean enableAbsorptionScale;
-    private boolean enableArmorHide;
-    private boolean enableShulkerBox;
-    private boolean enableElevator;
-    private boolean enableLightBlock;
-    private DamageIndicatorLimiter damageIndicatorLimiter;
-    private AbsorptionScale absorptionScale;
-    private ArmorHide armorHide;
-    private ShulkerBox shulkerBox;
-    private Elevator elevator;
-    private LightBlock lightBlock;
+    private FeatureManager featureManager;
     private DatabaseUtil databaseUtil;
     private ConfigManager lang;
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
@@ -61,11 +45,13 @@ public class BlueMiscExtension extends JavaPlugin {
             return;
         }
 
-        refreshFeatures();
+        featureManager = new FeatureManager(this);
+        featureManager.reload();
 
         getCommand("bluemiscextension").setExecutor(new Commands(this));
 
         getServer().getPluginManager().registerEvents(new PlayerDataListener(this), this);
+
 
         logger.info("BlueMiscExtension 已啟動");
     }
@@ -73,108 +59,8 @@ public class BlueMiscExtension extends JavaPlugin {
     @Override
     public void onDisable() {
         logger.info("BlueMiscExtension 已卸載");
-        unregisterFeatures();
+        if (featureManager != null) featureManager.unloadAll();
         if (databaseUtil != null) { databaseUtil.close(); }
-    }
-
-    public void refreshFeatures() {
-        unregisterFeatures();
-
-        enableDamageIndicatorLimiter = getConfig().getBoolean("Features.DamageIndicatorLimiter.enable", false);
-        enableAbsorptionScale = getConfig().getBoolean("Features.AbsorptionScale.enable", false);
-        enableArmorHide = getConfig().getBoolean("Features.ArmorHide.enable", false);
-        enableShulkerBox = getConfig().getBoolean("Features.ShulkerBox.enable", false);
-        enableElevator = getConfig().getBoolean("Features.Elevator.enable", false);
-        enableLightBlock = getConfig().getBoolean("Features.LightBlock.enable", false);
-
-        boolean hasProtocolLib = getServer().getPluginManager().getPlugin("ProtocolLib") != null;
-
-        if (enableDamageIndicatorLimiter) {
-            if (hasProtocolLib) {
-                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §aProtocolLib 已啟用 已開啟 移除受傷愛心 功能!");
-                damageIndicatorLimiter = new DamageIndicatorLimiter(this);
-                damageIndicatorLimiter.register();
-            } else {
-                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §cProtocolLib 未啟用 已關閉 移除受傷愛心 功能!");
-            }
-        } else {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c移除受傷愛心 功能已關閉");
-        }
-
-        if (enableAbsorptionScale) {
-            if (hasProtocolLib) {
-                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §aProtocolLib 已啟用 已開啟 吸收血量縮放 功能!");
-                absorptionScale = new AbsorptionScale(this);
-                absorptionScale.register();
-            } else {
-                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §cProtocolLib 未啟用 已關閉 吸收血量縮放 功能!");
-            }
-        } else {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c吸收血量縮放 功能已關閉");
-        }
-
-        if (enableArmorHide) {
-            if (hasProtocolLib) {
-                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §aProtocolLib 已啟用 已開啟 裝備隱形 功能!");
-                armorHide = new ArmorHide(this);
-                armorHide.register();
-            } else {
-                getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §cProtocolLib 未啟用 已關閉 裝備隱形 功能!");
-            }
-        } else {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c裝備隱形 功能已關閉");
-        }
-
-        if (enableShulkerBox) {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §a已開啟 界伏盒 功能!");
-            shulkerBox = new ShulkerBox(this);
-            shulkerBox.register();
-        } else {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c界伏盒 功能已關閉");
-        }
-
-        if (enableElevator) {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §a已開啟 電梯 功能!");
-            elevator = new Elevator(this);
-            elevator.register();
-        } else {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c電梯 功能已關閉");
-        }
-
-        if (enableLightBlock) {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §a已開啟 光源方塊 功能!");
-            lightBlock = new LightBlock(this);
-            lightBlock.register();
-        } else {
-            getServer().getConsoleSender().sendMessage("§r[BlueMiscExtension] §c光源方塊 功能已關閉");
-        }
-    }
-
-    private void unregisterFeatures() {
-        if (damageIndicatorLimiter != null) {
-            damageIndicatorLimiter.unregister();
-            damageIndicatorLimiter = null;
-        }
-        if (absorptionScale != null) {
-            absorptionScale.unregister();
-            absorptionScale = null;
-        }
-        if (armorHide != null) {
-            armorHide.unregister();
-            armorHide = null;
-        }
-        if (shulkerBox != null) {
-            shulkerBox.unregister();
-            shulkerBox = null;
-        }
-        if (elevator != null) {
-            elevator.unregister();
-            elevator = null;
-        }
-        if (lightBlock != null) {
-            lightBlock.unregister();
-            lightBlock = null;
-        }
     }
 
     public boolean toggleDebugMode(UUID uuid) {
@@ -211,5 +97,5 @@ public class BlueMiscExtension extends JavaPlugin {
 
     public DatabaseUtil getDatabaseUtil() { return databaseUtil; }
     public ConfigManager getLanguageManager() { return lang; }
-    public ArmorHide getArmorHide() { return armorHide; }
+    public FeatureManager getFeatureManager() { return featureManager; }
 }

@@ -1,4 +1,4 @@
-package net.mcblueice.bluemiscextension.features;
+package net.mcblueice.bluemiscextension.features.AbsorptionScale;
 
 import java.util.List;
 import java.util.Map;
@@ -18,8 +18,9 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedDataValue;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.Feature;
 
-public class AbsorptionScale implements Listener {
+public class AbsorptionScale implements Listener, Feature {
 
 	private final BlueMiscExtension plugin;
 	private final Map<UUID, Float> peakAbsorption = new ConcurrentHashMap<>();
@@ -29,6 +30,7 @@ public class AbsorptionScale implements Listener {
 		this.plugin = plugin;
 	}
 
+	@Override
 	public void register() {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
@@ -92,5 +94,6 @@ public class AbsorptionScale implements Listener {
         });
 	}
 
+    @Override
     public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
 }

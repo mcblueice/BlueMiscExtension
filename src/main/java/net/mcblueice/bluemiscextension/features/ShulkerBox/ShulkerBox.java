@@ -4,11 +4,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.Feature;
 
-public class ShulkerBox {
+public class ShulkerBox implements Feature {
     private final BlueMiscExtension plugin;
     private final Map<UUID, Long> openCooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> openedShulkerBoxes = new ConcurrentHashMap<>();
@@ -21,15 +23,17 @@ public class ShulkerBox {
         this.plugin = plugin;
     }
 
+    @Override
     public void register() {
         openListener = new ShulkerBoxOpen(this);
         closeListener = new ShulkerBoxClose(this);
         lockListener = new ShulkerBoxLock(this);
-        plugin.getServer().getPluginManager().registerEvents(openListener, plugin);
-        plugin.getServer().getPluginManager().registerEvents(closeListener, plugin);
-        plugin.getServer().getPluginManager().registerEvents(lockListener, plugin);
+        Bukkit.getPluginManager().registerEvents(openListener, plugin);
+        Bukkit.getPluginManager().registerEvents(closeListener, plugin);
+        Bukkit.getPluginManager().registerEvents(lockListener, plugin);
     }
 
+    @Override
     public void unregister() {
         if (openListener != null) HandlerList.unregisterAll(openListener);
         if (closeListener != null) HandlerList.unregisterAll(closeListener);

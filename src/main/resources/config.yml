@@ -27,3 +27,7 @@ Features:
     enable: true
   ArmorHide:
     enable: true
+  VirtualWorkbench:
+    enable: true
+  PlaceholderAPI:
+    enable: true

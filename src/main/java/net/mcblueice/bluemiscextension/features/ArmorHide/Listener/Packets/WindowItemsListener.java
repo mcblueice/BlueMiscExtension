@@ -16,18 +16,19 @@ import com.comphenix.protocol.events.PacketEvent;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHideUtil;
+import net.mcblueice.bluemiscextension.utils.ConfigManager;
 
 public class WindowItemsListener extends PacketAdapter {
 	private static final int PLAYER_INVENTORY_WINDOW_ID = 0;
 	private static final int ARMOR_SLOT_START = 5;
 	private static final int ARMOR_SLOT_END = 8;
 
-	private final BlueMiscExtension plugin;
+    private final ConfigManager lang;
 	private final ArmorHide armorHide;
 
 	public WindowItemsListener(BlueMiscExtension plugin, ArmorHide armorHide) {
 		super(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.WINDOW_ITEMS);
-		this.plugin = plugin;
+		this.lang = plugin.getLanguageManager();
 		this.armorHide = armorHide;
 	}
 
@@ -49,7 +50,7 @@ public class WindowItemsListener extends PacketAdapter {
 		for (int slot = ARMOR_SLOT_START; slot <= ARMOR_SLOT_END && slot < modifiedItems.size(); slot++) {
 			ItemStack armor = modifiedItems.get(slot);
 			if (armor == null) continue;
-			ItemStack placeholder = ArmorHideUtil.armorConvert(armor, plugin.getLanguageManager());
+			ItemStack placeholder = ArmorHideUtil.armorConvert(armor, lang);
 			modifiedItems.set(slot, placeholder);
 		}
 

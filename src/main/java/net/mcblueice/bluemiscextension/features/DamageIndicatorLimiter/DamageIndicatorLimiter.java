@@ -1,4 +1,4 @@
-package net.mcblueice.bluemiscextension.features;
+package net.mcblueice.bluemiscextension.features.DamageIndicatorLimiter;
 
 import org.bukkit.Particle;
 
@@ -12,15 +12,17 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedParticle;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.Feature;
 
 
-public class DamageIndicatorLimiter {
+public class DamageIndicatorLimiter implements Feature {
 	private final BlueMiscExtension plugin;
 
 	public DamageIndicatorLimiter(BlueMiscExtension plugin) {
 		this.plugin = plugin;
 	}
 
+    @Override
     public void register() {
         ProtocolManager manager = ProtocolLibrary.getProtocolManager();
         manager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL,PacketType.Play.Server.WORLD_PARTICLES) {
@@ -41,5 +43,6 @@ public class DamageIndicatorLimiter {
         });
     }
     
+    @Override
     public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
 }

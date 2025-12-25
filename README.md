@@ -12,6 +12,7 @@
 - 生存模式放置/破壞/調整光源方塊
 - 電梯功能
 - 盔甲隱身功能
+- PlaceholderAPI 支援
 
 ## 指令列表
 
@@ -34,6 +35,13 @@
 | LOOM | 紡織機 | `bluemiscextension.workbench.loom` |
 | ENDERCHEST | 終界箱 | `bluemiscextension.workbench.enderchest` |
 
+## PlaceholderAPI 變量
+
+| 變量 | 用途 |
+|------|------|
+| `%bluemiscextension_armorhidden%` | 顯示玩家是否隱藏盔甲 |
+| `%bluemiscextension_ip%` | 顯示玩家 IP 地址 |
+| `%bluemiscextension_hostname%` | 顯示玩家連線的主機名稱 |
 
 ## 授權 License
 

@@ -19,6 +19,8 @@ public class DatabaseUtil {
     private Connection connection;
     private String dbType = "sqlite";
     private final ConcurrentHashMap<UUID, Boolean> armorHiddenCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, String> hostnameCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, String> ipCache = new ConcurrentHashMap<>();
 
     public DatabaseUtil(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -27,65 +29,105 @@ public class DatabaseUtil {
     public void connectAndInitPlayerTable() throws SQLException {
         FileConfiguration config = plugin.getConfig();
         dbType = config.getString("Database.type", "sqlite").toLowerCase();
-        if (dbType.equals("mysql")) {
-            String host = config.getString("Database.MySQL.host", "localhost");
-            int port = config.getInt("Database.MySQL.port", 3306);
-            String database = config.getString("Database.MySQL.database", "database");
-            String user = config.getString("Database.MySQL.user", "user");
-            String password = config.getString("Database.MySQL.password", "password");
-            String url = "jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&autoReconnect=true";
-            connection = DriverManager.getConnection(url, user, password);
-        } else {
-            // SQLite
-            try {
-                Class.forName("org.sqlite.JDBC");
-            } catch (ClassNotFoundException e) {
-                throw new SQLException("SQLite JDBC driver not found.", e);
-            }
-            File dbFile = new File(plugin.getDataFolder(), "database.db");
-            String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
-            connection = DriverManager.getConnection(url);
+        
+        switch (dbType) {
+            case "mysql":
+                String host = config.getString("Database.MySQL.host", "localhost");
+                int port = config.getInt("Database.MySQL.port", 3306);
+                String database = config.getString("Database.MySQL.database", "database");
+                String user = config.getString("Database.MySQL.user", "user");
+                String password = config.getString("Database.MySQL.password", "password");
+                String url = "jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&autoReconnect=true";
+                connection = DriverManager.getConnection(url, user, password);
+                break;
+            case "sqlite":
+                try {
+                    Class.forName("org.sqlite.JDBC");
+                } catch (ClassNotFoundException e) {
+                    throw new SQLException("SQLite JDBC driver not found.", e);
+                }
+                File dbFile = new File(plugin.getDataFolder(), "database.db");
+                String sqliteUrl = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+                connection = DriverManager.getConnection(sqliteUrl);
+                break;
+            default:
+                throw new SQLException("Unknown database type: " + dbType);
         }
         checkAndCreatePlayerTable();
     }
 
     private void checkAndCreatePlayerTable() throws SQLException {
         String createTable;
-        if (dbType.equals("mysql")) {
-            createTable = "CREATE TABLE IF NOT EXISTS player_data (" +
-                "uuid CHAR(36) PRIMARY KEY, " +
-                "player_name VARCHAR(32) NOT NULL, " +
-                "hidden_armor BOOLEAN NOT NULL DEFAULT 0" +
-                ")";
-        } else {
-            createTable = "CREATE TABLE IF NOT EXISTS player_data (" +
-                "uuid CHAR(36) PRIMARY KEY, " +
-                "player_name TEXT NOT NULL, " +
-                "hidden_armor INTEGER NOT NULL DEFAULT 0" +
-                ")";
+        switch (dbType) {
+            case "mysql":
+                createTable = "CREATE TABLE IF NOT EXISTS player_data (" +
+                    "uuid CHAR(36) PRIMARY KEY, " +
+                    "player_name VARCHAR(32) NOT NULL, " +
+                    "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
+                    "hostname VARCHAR(255), " +
+                    "ip_address VARCHAR(45)" +
+                    ")";
+                break;
+            case "sqlite":
+                createTable = "CREATE TABLE IF NOT EXISTS player_data (" +
+                    "uuid CHAR(36) PRIMARY KEY, " +
+                    "player_name TEXT NOT NULL, " +
+                    "hidden_armor INTEGER NOT NULL DEFAULT 0, " +
+                    "hostname TEXT, " +
+                    "ip_address TEXT" +
+                    ")";
+                break;
+            default:
+                throw new SQLException("Unknown database type: " + dbType);
         }
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate(createTable);
-        if (dbType.equals("mysql")) {
-            ensureColumnExists("player_data", "player_name", "VARCHAR(32) NOT NULL");
-            ensureColumnExists("player_data", "hidden_armor", "BOOLEAN NOT NULL DEFAULT 0");
+        
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(createTable);
         }
-        stmt.close();
+
+        switch (dbType) {
+            case "mysql":
+                ensureColumnExists("player_data", "player_name", "VARCHAR(32) NOT NULL");
+                ensureColumnExists("player_data", "hidden_armor", "BOOLEAN NOT NULL DEFAULT 0");
+                ensureColumnExists("player_data", "hostname", "VARCHAR(255)");
+                ensureColumnExists("player_data", "ip_address", "VARCHAR(45)");
+                break;
+            case "sqlite":
+                ensureColumnExists("player_data", "player_name", "TEXT NOT NULL");
+                ensureColumnExists("player_data", "hidden_armor", "INTEGER NOT NULL DEFAULT 0");
+                ensureColumnExists("player_data", "hostname", "TEXT");
+                ensureColumnExists("player_data", "ip_address", "TEXT");
+                break;
+            default:
+                throw new SQLException("Unknown database type: " + dbType);
+        }
     }
 
     private void ensureColumnExists(String table, String column, String definition) throws SQLException {
-        if (!dbType.equals("mysql")) return;
-        Statement stmt = connection.createStatement();
-        String checkColumn = "SHOW COLUMNS FROM " + table + " LIKE '" + column + "'";
         boolean exists = false;
-        var rs = stmt.executeQuery(checkColumn);
-        if (rs.next()) exists = true;
-        rs.close();
-        if (!exists) {
-            String alter = "ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition;
-            stmt.executeUpdate(alter);
+        try (Statement stmt = connection.createStatement()) {
+            switch (dbType) {
+                case "mysql":
+                    try (ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + table + " LIKE '" + column + "'")) {
+                        if (rs.next()) exists = true;
+                    }
+                    break;
+                case "sqlite":
+                    try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ")")) {
+                        while (rs.next()) {
+                            if (rs.getString("name").equalsIgnoreCase(column)) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    throw new SQLException("Unknown database type: " + dbType);
+            }
+            
+            if (!exists) stmt.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
         }
-        stmt.close();
     }
 
     public synchronized void upsertPlayerData(UUID uuid, String playerName) throws SQLException {
@@ -94,12 +136,17 @@ public class DatabaseUtil {
 
         String trimmedName = playerName.length() > 32 ? playerName.substring(0, 32) : playerName;
         String sql;
-        if (dbType.equals("mysql")) {
-            sql = "INSERT INTO player_data (uuid, player_name, hidden_armor) VALUES (?, ?, 0) " +
-                "ON DUPLICATE KEY UPDATE player_name = VALUES(player_name)";
-        } else {
-            sql = "INSERT INTO player_data (uuid, player_name, hidden_armor) VALUES (?, ?, 0) " +
-                "ON CONFLICT(uuid) DO UPDATE SET player_name = excluded.player_name";
+        switch (dbType) {
+            case "mysql":
+                sql = "INSERT INTO player_data (uuid, player_name, hidden_armor) VALUES (?, ?, 0) " +
+                    "ON DUPLICATE KEY UPDATE player_name = VALUES(player_name)";
+                break;
+            case "sqlite":
+                sql = "INSERT INTO player_data (uuid, player_name, hidden_armor) VALUES (?, ?, 0) " +
+                    "ON CONFLICT(uuid) DO UPDATE SET player_name = excluded.player_name";
+                break;
+            default:
+                throw new SQLException("Unknown database type: " + dbType);
         }
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -112,9 +159,8 @@ public class DatabaseUtil {
     public Connection getConnection() { return connection; }
 
     public void createTable(String sql) throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            throw new SQLException("Database connection is not established.");
-        }
+        if (connection == null || connection.isClosed()) throw new SQLException("Database connection is not established.");
+
         Statement stmt = connection.createStatement();
         stmt.executeUpdate(sql);
         stmt.close();
@@ -133,15 +179,33 @@ public class DatabaseUtil {
             try {
                 if (uuid == null || connection == null || connection.isClosed()) return;
 
-                String sql = "SELECT hidden_armor FROM player_data WHERE uuid = ?";
+                String sql = "SELECT hidden_armor, hostname, ip_address FROM player_data WHERE uuid = ?";
                 try (PreparedStatement ps = connection.prepareStatement(sql)) {
                     ps.setString(1, uuid.toString());
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
-                        boolean result = dbType.equals("mysql") ? rs.getBoolean("hidden_armor") : rs.getInt("hidden_armor") == 1;
+                        boolean result = false;
+                        switch (dbType) {
+                            case "mysql":
+                                result = rs.getBoolean("hidden_armor");
+                                break;
+                            case "sqlite":
+                                result = rs.getInt("hidden_armor") == 1;
+                                break;
+                            default:
+                                throw new SQLException("Unknown database type: " + dbType);
+                        }
                         armorHiddenCache.put(uuid, result);
+
+                        String hostname = rs.getString("hostname");
+                        hostnameCache.put(uuid, (hostname != null) ? hostname : "UnknownHostname");
+
+                        String ip = rs.getString("ip_address");
+                        ipCache.put(uuid, (ip != null) ? ip : "UnknownIp");
                     } else {
                         armorHiddenCache.put(uuid, false);
+                        hostnameCache.put(uuid, "UnknownHostname");
+                        ipCache.put(uuid, "UnknownIp");
                     }
                 }
             } catch (SQLException e) {
@@ -155,23 +219,45 @@ public class DatabaseUtil {
             try {
                 if (uuid == null || connection == null || connection.isClosed()) return;
 
-                Boolean cached = armorHiddenCache.get(uuid);
-                if (cached == null) return;
+                //ArmorHidden
+                Boolean cachedArmor = armorHiddenCache.get(uuid);
+                if (cachedArmor != null) {
+                    String sql = "UPDATE player_data SET hidden_armor = ? WHERE uuid = ?";
 
-                String sql;
-                if (dbType.equals("mysql")) {
-                    sql = "UPDATE player_data SET hidden_armor = ? WHERE uuid = ?";
-                } else {
-                    sql = "UPDATE player_data SET hidden_armor = ? WHERE uuid = ?";
+                    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                        ps.setInt(1, cachedArmor ? 1 : 0);
+                        ps.setString(2, uuid.toString());
+                        ps.executeUpdate();
+                    }
+                    armorHiddenCache.remove(uuid);
                 }
 
-                try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                    ps.setInt(1, cached ? 1 : 0);
-                    ps.setString(2, uuid.toString());
-                    ps.executeUpdate();
+                //Hostname
+                String cachedHostname = hostnameCache.get(uuid);
+                if (cachedHostname != null) {
+                    String sql = "UPDATE player_data SET hostname = ? WHERE uuid = ?";
+
+                    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                        ps.setString(1, cachedHostname);
+                        ps.setString(2, uuid.toString());
+                        ps.executeUpdate();
+                    }
+                    hostnameCache.remove(uuid);
                 }
 
-                armorHiddenCache.remove(uuid);
+                //IP
+                String cachedIp = ipCache.get(uuid);
+                if (cachedIp != null) {
+                    String sql = "UPDATE player_data SET ip_address = ? WHERE uuid = ?";
+
+                    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                        ps.setString(1, cachedIp);
+                        ps.setString(2, uuid.toString());
+                        ps.executeUpdate();
+                    }
+                    ipCache.remove(uuid);
+                }
+
             } catch (SQLException e) {
                 plugin.getLogger().warning("Failed to save and remove cache for " + uuid + ": " + e.getMessage());
             }
@@ -181,25 +267,10 @@ public class DatabaseUtil {
 // #region ArmorHidden處理
     public boolean getArmorHiddenState(UUID uuid) {
         if (uuid == null) return false;
-
-        Boolean cached = armorHiddenCache.get(uuid);
-        if (cached != null) return cached;
-
-        // 注意：如果在 PacketListener (高頻率觸發) 中調用此方法且緩存未命中，
-        // 直接調用 loadAndCreateCache 會導致瞬間產生大量異步任務，造成伺服器卡頓。
-        // 建議確保在 PlayerJoinEvent 預先載入數據。
-        // 如果必須在此處懶加載，建議增加防重複機制 (例如 Set<UUID> loading)。
-        // 這裡暫時保留原邏輯但建議您檢查調用頻率，或將載入邏輯移至登入事件。
-        if (!plugin.getServer().getPlayer(uuid).isOnline()) return false; // 簡單檢查，避免離線玩家觸發
-        
-        // 為了安全，這裡不應該直接觸發資料庫查詢，除非有防重機制。
-        // 假設您已在 JoinEvent 處理載入，這裡返回 false 是安全的默認值。
-        return false;
+        return armorHiddenCache.getOrDefault(uuid, false);
     }
 
-    // 異步設定裝備隱藏狀態
     public CompletableFuture<Void> setArmorHiddenState(UUID uuid, boolean state) {
-        // 1. 立即更新緩存 (同步)，確保 UI 或邏輯能即時獲得最新狀態，避免異步延遲導致的狀態不一致
         armorHiddenCache.put(uuid, state);
 
         return CompletableFuture.runAsync(() -> {
@@ -216,6 +287,60 @@ public class DatabaseUtil {
                 }
             } catch (SQLException e) {
                 plugin.getLogger().warning("Failed to update armor hidden state for " + uuid + ": " + e.getMessage());
+            }
+        }, runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
+// #endregion
+
+// #region Hostname/IP處理
+    public String getHostname(UUID uuid) {
+        if (uuid == null) return null;
+        return hostnameCache.getOrDefault(uuid, "UnknownHostname");
+    }
+
+    public String getIp(UUID uuid) {
+        if (uuid == null) return null;
+        return ipCache.getOrDefault(uuid, "UnknownIp");
+    }
+
+    public CompletableFuture<Void> setHostname(UUID uuid, String hostname) {
+        hostnameCache.put(uuid, hostname);
+
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (uuid == null) return;
+                if (connection == null || connection.isClosed()) connectAndInitPlayerTable();
+
+                String sql = "UPDATE player_data SET hostname = ? WHERE uuid = ?";
+
+                try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                    ps.setString(1, hostname);
+                    ps.setString(2, uuid.toString());
+                    ps.executeUpdate();
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to update hostname for " + uuid + ": " + e.getMessage());
+            }
+        }, runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
+
+    public CompletableFuture<Void> setIpAddress(UUID uuid, String ip) {
+        if (ip != null) ipCache.put(uuid, ip);
+
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (uuid == null) return;
+                if (connection == null || connection.isClosed()) connectAndInitPlayerTable();
+
+                String sql = "UPDATE player_data SET ip_address = ? WHERE uuid = ?";
+
+                try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                    ps.setString(1, ip);
+                    ps.setString(2, uuid.toString());
+                    ps.executeUpdate();
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to update IP address for " + uuid + ": " + e.getMessage());
             }
         }, runnable -> TaskScheduler.runAsync(plugin, runnable));
     }

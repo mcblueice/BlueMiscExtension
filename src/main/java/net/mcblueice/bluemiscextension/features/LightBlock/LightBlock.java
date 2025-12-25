@@ -1,5 +1,6 @@
-package net.mcblueice.bluemiscextension.features;
+package net.mcblueice.bluemiscextension.features.LightBlock;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,6 +11,7 @@ import org.bukkit.block.data.Levelled;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -17,8 +19,9 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.Feature;
 
-public class LightBlock implements Listener {
+public class LightBlock implements Listener, Feature {
 
     private final BlueMiscExtension plugin;
 
@@ -26,8 +29,9 @@ public class LightBlock implements Listener {
         this.plugin = plugin;
     }
 
+    @Override
     public void register() {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     @EventHandler
@@ -79,5 +83,8 @@ public class LightBlock implements Listener {
         }
     }
 
-    public void unregister() {}
+    @Override
+    public void unregister() {
+        HandlerList.unregisterAll(this);
+    }
 }

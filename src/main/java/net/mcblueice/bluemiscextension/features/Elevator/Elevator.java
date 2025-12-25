@@ -1,11 +1,14 @@
-package net.mcblueice.bluemiscextension.features;
+package net.mcblueice.bluemiscextension.features.Elevator;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -15,8 +18,9 @@ import net.kyori.adventure.sound.Sound;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluemiscextension.features.Feature;
 
-public class Elevator implements Listener {
+public class Elevator implements Listener, Feature {
 
     private final BlueMiscExtension plugin;
 
@@ -24,8 +28,9 @@ public class Elevator implements Listener {
         this.plugin = plugin;
     }
 
+    @Override
     public void register() {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     @EventHandler
@@ -34,6 +39,7 @@ public class Elevator implements Listener {
         if (!event.isSneaking()) return;
 
         Location playerLoc = player.getLocation();
+        Location particeLocation = playerLoc.clone().getBlock().getLocation().add(0.5, 1, 0.5);
 
         Block[] belowBlocks = getBelowBlocks(playerLoc);
 
@@ -44,6 +50,7 @@ public class Elevator implements Listener {
             Location target = findElevatorTarget(player, matchedCombo, false);
             if (target != null) {
                 TaskScheduler.runTask(player, plugin, () -> {
+                    particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005);
                     try {
                         player.teleportAsync(target);
                     } catch (NoSuchMethodError e) {
@@ -67,6 +74,7 @@ public class Elevator implements Listener {
         if (player.getVelocity().getY() <= 0) return;
 
         Location playerLoc = fromLoc;
+        Location particeLocation = playerLoc.clone().getBlock().getLocation().add(0.5, 1, 0.5);
 
         Block[] belowBlocks = getBelowBlocks(playerLoc);
 
@@ -77,6 +85,7 @@ public class Elevator implements Listener {
             Location target = findElevatorTarget(player, matchedCombo, true);
             if (target != null) {
                 TaskScheduler.runTask(player, plugin, () -> {
+                    particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005);
                     try {
                         player.teleportAsync(target);
                     } catch (NoSuchMethodError e) {
@@ -89,7 +98,10 @@ public class Elevator implements Listener {
         }
     }
 
-    public void unregister() {}
+    @Override
+    public void unregister() {
+        HandlerList.unregisterAll(this);
+    }
 
 // #region Utils
     private Block[] getBelowBlocks(Location playerLoc) {

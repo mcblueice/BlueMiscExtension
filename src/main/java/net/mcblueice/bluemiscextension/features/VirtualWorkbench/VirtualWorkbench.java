@@ -1,16 +1,26 @@
-package net.mcblueice.bluemiscextension.features;
+package net.mcblueice.bluemiscextension.features.VirtualWorkbench;
 
 import org.bukkit.entity.Player;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluemiscextension.features.Feature;
 
-public class VirtualWorkbench {
+public class VirtualWorkbench implements Feature {
     private final BlueMiscExtension plugin;
+    private final ConfigManager lang;
 
     public VirtualWorkbench(BlueMiscExtension plugin) {
         this.plugin = plugin;
+        this.lang = plugin.getLanguageManager();
     }
+
+    @Override
+    public void register() {}
+
+    @Override
+    public void unregister() {}
 
     public void open(Player player, String station) {
         if (player == null || station == null) return;
@@ -45,7 +55,7 @@ public class VirtualWorkbench {
                     plugin.sendDebug("已為玩家開啟終界箱: " + player.getName());
                     break;
                 default:
-                    player.sendMessage("§c未知的工作站類型: " + station);
+                    player.sendMessage(lang.get("VirtualWorkbench.UnknownStation", station));
                     break;
             }
         });

@@ -3,6 +3,7 @@ package net.mcblueice.bluemiscextension.features.ArmorHide;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -24,9 +25,10 @@ import net.mcblueice.bluemiscextension.features.ArmorHide.Listener.GameModeListe
 import net.mcblueice.bluemiscextension.features.ArmorHide.Listener.InventoryClickListener;
 import net.mcblueice.bluemiscextension.features.ArmorHide.Listener.PotionEffectListener;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
+import net.mcblueice.bluemiscextension.features.Feature;
 
 
-public class ArmorHide {
+public class ArmorHide implements Feature {
 	private final BlueMiscExtension plugin;
     private final ProtocolManager protocolManager;
     private final DatabaseUtil databaseUtil;
@@ -37,6 +39,7 @@ public class ArmorHide {
         this.databaseUtil = plugin.getDatabaseUtil();
     }
 
+	@Override
 	public void register() {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
@@ -44,11 +47,12 @@ public class ArmorHide {
         manager.addPacketListener(new WindowItemsListener(plugin, this));
         manager.addPacketListener(new EntityEquipmentListener(plugin, this));
         
-        plugin.getServer().getPluginManager().registerEvents(new GameModeListener(plugin, this), plugin);
-        plugin.getServer().getPluginManager().registerEvents(new InventoryClickListener(plugin, this), plugin);
-        plugin.getServer().getPluginManager().registerEvents(new PotionEffectListener(plugin, this), plugin);
+        Bukkit.getPluginManager().registerEvents(new GameModeListener(plugin, this), plugin);
+        Bukkit.getPluginManager().registerEvents(new InventoryClickListener(plugin, this), plugin);
+        Bukkit.getPluginManager().registerEvents(new PotionEffectListener(plugin, this), plugin);
 	}
 
+    @Override
     public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
 
     public boolean isArmorHidden(Player player) {
