@@ -83,7 +83,7 @@ public class FeatureManager {
                 if (dependencies != null && dependencies.length > 0) {
                     depMsg += lang.get("FeatureManager.Dependency.Enabled", String.join(", ", dependencies));
                 }
-                Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + lang.get("FeatureManager.Enabled", depMsg, displayName));
+                Bukkit.getConsoleSender().sendMessage("[BlueMiscExtension]" + lang.get("FeatureManager.Enabled", depMsg, displayName));
 
                 T feature = factory.apply(plugin);
                 feature.register();
@@ -91,10 +91,10 @@ public class FeatureManager {
                 return feature;
             } else {
                 String depMsg = "§c" + lang.get("FeatureManager.Dependency.Missing", String.join(", ", missingDeps));
-                Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + lang.get("FeatureManager.Disabled", depMsg, displayName));
+                Bukkit.getConsoleSender().sendMessage("[BlueMiscExtension]" + lang.get("FeatureManager.Disabled", depMsg, displayName));
             }
         } else {
-            Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + lang.get("FeatureManager.Closed", displayName));
+            Bukkit.getConsoleSender().sendMessage("[BlueMiscExtension]" + lang.get("FeatureManager.Closed", displayName));
         }
         return null;
     }

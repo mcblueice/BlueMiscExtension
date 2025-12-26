@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
@@ -48,10 +49,18 @@ public class AbsorptionScale implements Listener, Feature {
 
 				List<WrappedDataValue> dataList = packet.getDataValueCollectionModifier().readSafely(0);
 				if (dataList == null || dataList.isEmpty()) return;
+				int index = 15;
+				switch (Bukkit.getVersion()) {
+					case "1.21.11":
+						index = 17;
+						break;
+					default:
+						break;
+				}
+				
 				WrappedDataValue packetData = null;
 				for (WrappedDataValue data : dataList) {
-					// index 15 在 1.20, 1.21 是吸收量 其他我不確定
-					if (data.getIndex() == 15) {
+					if (data.getIndex() == index) {
 						packetData = data;
 						break;
 					}
