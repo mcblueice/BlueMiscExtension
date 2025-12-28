@@ -59,8 +59,17 @@ public class BlueMiscExtension extends JavaPlugin {
     @Override
     public void onDisable() {
         logger.info("BlueMiscExtension 已卸載");
+
         if (featureManager != null) featureManager.unloadAll();
-        if (databaseUtil != null) { databaseUtil.close(); }
+
+        if (databaseUtil != null) {
+            Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + "§eDEBUG: §7" + "伺服器關閉 開始保存玩家資料");
+            for (Player player : getServer().getOnlinePlayers()) {
+                Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + "§eDEBUG: §7" + "儲存玩家 " + player.getName() + " 的資料...");
+                databaseUtil.saveAndRemoveCacheSync(player.getUniqueId());
+            }
+            databaseUtil.close();
+        }
     }
 
     public boolean toggleDebugMode(UUID uuid) {
