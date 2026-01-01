@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
@@ -20,6 +19,7 @@ import com.comphenix.protocol.wrappers.WrappedDataValue;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.Feature;
+import net.mcblueice.bluemiscextension.utils.ServerUtil;
 
 public class AbsorptionScale implements Listener, Feature {
 
@@ -49,14 +49,7 @@ public class AbsorptionScale implements Listener, Feature {
 
 				List<WrappedDataValue> dataList = packet.getDataValueCollectionModifier().readSafely(0);
 				if (dataList == null || dataList.isEmpty()) return;
-				int index = 15;
-				switch (Bukkit.getVersion()) {
-					case "1.21.11":
-						index = 17;
-						break;
-					default:
-						break;
-				}
+				int index = ServerUtil.getAbsorptionIndex();
 				
 				WrappedDataValue packetData = null;
 				for (WrappedDataValue data : dataList) {
@@ -101,6 +94,22 @@ public class AbsorptionScale implements Listener, Feature {
 				AbsorptionScale.this.plugin.sendDebug("§e更新 §b" + player.getName() + " §e吸收血量至 §6" + displayValue + "§7(§6" + absorptionValue + "/" + peak + "§7)");
 			}
         });
+	}
+
+	public static Float getMaxAbsorption(UUID uuid) {
+		BlueMiscExtension plugin = BlueMiscExtension.getInstance();
+		AbsorptionScale absorptionScale = plugin.getFeatureManager().getFeature(AbsorptionScale.class);
+		if (absorptionScale == null) return 0F;
+		Float maxAbsorption = absorptionScale.peakAbsorption.get(uuid);
+		return maxAbsorption != null ? maxAbsorption : 0F;
+	}
+	public static Float getAbsorption(UUID uuid) {
+		BlueMiscExtension plugin = BlueMiscExtension.getInstance();
+		AbsorptionScale absorptionScale = plugin.getFeatureManager().getFeature(AbsorptionScale.class);
+		if (absorptionScale == null) return 0F;
+		Player player = plugin.getServer().getPlayer(uuid);
+		Float absorption = (float) player.getAbsorptionAmount();
+		return absorption != null ? absorption : 0F;
 	}
 
     @Override

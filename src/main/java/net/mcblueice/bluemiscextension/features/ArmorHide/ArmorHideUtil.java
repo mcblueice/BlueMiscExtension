@@ -80,14 +80,9 @@ public final class ArmorHideUtil {
         }
 
         // displayname
-        Component displayComponent = oldMeta.displayName();
-        if (displayComponent != null) {
-            if (prefix.equals("CHAINMAIL")) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
-        } else {
-            displayComponent = Component.translatable(item.getType().getItemTranslationKey());
-            if (prefix.equals("CHAINMAIL") && oldMeta.getEnchants().isEmpty()) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
-        }
-        newMeta.displayName(displayComponent.decoration(TextDecoration.ITALIC, false));
+        Component displayComponent = oldMeta.hasDisplayName() ? oldMeta.displayName() : Component.translatable(item.getType().getItemTranslationKey());
+        if (prefix.equals("CHAINMAIL") && oldMeta.getEnchants().isEmpty()) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
+        newMeta.displayName(displayComponent.decoration(TextDecoration.ITALIC, oldMeta.hasDisplayName()));
 
         // lore
         List<Component> loreComponent = oldMeta.lore() != null ? new ArrayList<>(oldMeta.lore()) : new ArrayList<>();

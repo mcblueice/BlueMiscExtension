@@ -45,6 +45,8 @@
 | `%bluemiscextension_armorhidden%` | 顯示玩家是否隱藏盔甲 |
 | `%bluemiscextension_ip%` | 顯示玩家 IP 地址 |
 | `%bluemiscextension_hostname%` | 顯示玩家連線的主機名稱 |
+| `%bluemiscextension_absorption%` | 顯示玩家目前吸收血量 |
+| `%bluemiscextension_maxabsorption%` | 顯示玩家目前縮放的吸收上限血量 |
 
 ## 授權 License
 

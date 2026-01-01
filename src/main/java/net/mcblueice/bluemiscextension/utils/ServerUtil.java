@@ -16,14 +16,18 @@ import com.sun.management.OperatingSystemMXBean;
 
 public class ServerUtil {
 
-    private final boolean isFolia;
-    private final DecimalFormat df = new DecimalFormat("0.00");
+    public final boolean isFolia;
+    public final String mcVersion;
+    public static final int majorVersion = getMCVersionParts(0);
+    public static final int minorVersion = getMCVersionParts(1);
+    public static final int patchVersion = getMCVersionParts(2);
+    private final DecimalFormat df = new DecimalFormat("#.##");
 
     public ServerUtil() {
         this.isFolia = checkFolia();
+        this.mcVersion = getMCVersion();
     }
 
-    public boolean isFolia() { return isFolia; }
     private boolean checkFolia() {
         if (Bukkit.getVersion().toLowerCase().contains("folia")) return true;
         try {
@@ -38,18 +42,26 @@ public class ServerUtil {
         String version = Bukkit.getBukkitVersion();
         return version.split("-")[0];
     }
+    public static int getMCVersionParts(int index) {
+        String version = Bukkit.getBukkitVersion();
+        String[] parts = version.split("-")[0].split("\\.");
+        if (index >= parts.length) return 0;
+        return Integer.parseInt(parts[index]);
+    }
+
     public static boolean isNewAttributeKey() {
-        String[] parts = getMCVersion().split("\\.");
-        int major = Integer.parseInt(parts[1]);
-        int minor = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
-        return (major > 21) || (major == 21 && minor >= 7);
+        return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 7);
+    }
+    public static int getAbsorptionIndex() {
+        return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 11) ? 17 : 15;
     }
 
     public Component getServerStatus(CommandSender sender) {
         TextComponent.Builder builder = Component.text();
 
         builder.append(Component.text("§8§m---------§r§a伺服器狀態§8§m---------\n"));
-        builder.append(Component.text("§6核心類型: " + (isFolia ? "§bFolia" : "§ePaper/Spigot") + "\n"));
+        builder.append(Component.text("§6核心類型: " + (isFolia ? "§bFolia" : "§ePaper/Spigot") + " §e" +getMCVersion() + "\n"));
+        builder.append(Component.text("§6Bukkit版本: §e" + Bukkit.getBukkitVersion() + "\n"));
 
         OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
         int processors = osBean.getAvailableProcessors();

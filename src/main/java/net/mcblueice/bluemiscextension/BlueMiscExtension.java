@@ -1,6 +1,7 @@
 package net.mcblueice.bluemiscextension;
 
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +26,7 @@ public class BlueMiscExtension extends JavaPlugin {
     private DatabaseUtil databaseUtil;
     private ServerUtil serverUtil;
     private ConfigManager lang;
+    public static final UUID CONSOLE_UUID = new UUID(0L, 0L);
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
 
     public BlueMiscExtension() {
@@ -34,6 +36,7 @@ public class BlueMiscExtension extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if (instance != null) throw new IllegalStateException("Plugin is already initialized!");
         instance = this;
         logger = getLogger();
         saveDefaultConfig();
@@ -69,10 +72,11 @@ public class BlueMiscExtension extends JavaPlugin {
 
         if (databaseUtil != null) {
             Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + "§eDEBUG: §7" + "伺服器關閉 開始保存玩家資料");
+            HashSet<UUID> playerUUIDs = new HashSet<>();
             for (Player player : getServer().getOnlinePlayers()) {
-                Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + "§eDEBUG: §7" + "儲存玩家 " + player.getName() + " 的資料...");
-                databaseUtil.saveAndRemoveCacheSync(player.getUniqueId());
+                playerUUIDs.add(player.getUniqueId());
             }
+            databaseUtil.savePlayerData(playerUUIDs, true);
             databaseUtil.close();
         }
     }
@@ -92,7 +96,7 @@ public class BlueMiscExtension extends JavaPlugin {
         if (debugModePlayers.isEmpty()) return;
 
         // console
-        if (debugModePlayers.contains(new UUID(0L, 0L))) sendMessage("§eDEBUG: §7" + message);
+        if (debugModePlayers.contains(CONSOLE_UUID)) sendMessage("§eDEBUG: §7" + message);
         // player
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (debugModePlayers.contains(player.getUniqueId())) sendMessage(player, "§eDEBUG: §7" + message);
@@ -101,7 +105,7 @@ public class BlueMiscExtension extends JavaPlugin {
 
     public void sendMessage(String message) {
         if (message == null) return;
-        TaskScheduler.runTask(this, () -> Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + message));
+        Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + message);
     }
 
     public void sendMessage(Player player, String message) {

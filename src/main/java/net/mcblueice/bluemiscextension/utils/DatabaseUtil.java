@@ -6,6 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -33,11 +36,13 @@ public class DatabaseUtil {
     private final ConcurrentHashMap<UUID, Boolean> armorHiddenCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, String> hostnameCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, String> ipCache = new ConcurrentHashMap<>();
+    private TaskScheduler.RepeatingTaskHandler autoSaveTask;
 
     public DatabaseUtil(BlueMiscExtension plugin) {
         this.plugin = plugin;
     }
 
+    // region 初始化與關閉
     public void connectAndInitPlayerTable() throws SQLException {
         FileConfiguration config = plugin.getConfig();
         dbType = config.getString("Database.type", "sqlite").toLowerCase();
@@ -71,6 +76,7 @@ public class DatabaseUtil {
                 hikariConfig.setJdbcUrl("jdbc:sqlite:" + dbFile.getAbsolutePath());
                 hikariConfig.setDriverClassName("org.sqlite.JDBC");
                 hikariConfig.setMaximumPoolSize(1);
+                hikariConfig.setConnectionTimeout(5000);
                 hikariConfig.addDataSourceProperty("journal_mode", "WAL");
                 hikariConfig.addDataSourceProperty("synchronous", "NORMAL");
                 break;
@@ -80,6 +86,15 @@ public class DatabaseUtil {
 
         dataSource = new HikariDataSource(hikariConfig);
         checkAndCreatePlayerTable();
+        startAutoSaveTask();
+    }
+
+    public void close() {
+        if (autoSaveTask != null) {
+            autoSaveTask.cancel();
+            autoSaveTask = null;
+        }
+        if (dataSource != null && !dataSource.isClosed()) dataSource.close();
     }
 
     private void checkAndCreatePlayerTable() throws SQLException {
@@ -157,6 +172,79 @@ public class DatabaseUtil {
             if (!exists) stmt.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
         }
     }
+    // endregion 初始化與關閉
+
+    // region 資料保存與載入
+    private void startAutoSaveTask() {
+        long interval = plugin.getConfig().getLong("Database.AutosaveInterval", 12000L);
+        if (interval <= 0) return;
+        if (autoSaveTask != null) autoSaveTask.cancel();
+        autoSaveTask = TaskScheduler.runAsyncRepeatingTask(plugin, this::saveAllCachedData, interval, interval);
+    }
+
+    public void saveAllCachedData() {
+        if (dataSource == null || dataSource.isClosed()) return;
+        if (dataLoadedPlayers.isEmpty()) return;
+
+        plugin.sendDebug("執行資料庫自動保存任務...");
+        // new一個新的Set避免被修改
+        savePlayerData(new HashSet<>(dataLoadedPlayers), false);
+    }
+
+    public void savePlayerData(UUID uuid, boolean removeCacheAndUnlock) {
+        if (dataSource == null || dataSource.isClosed()) return;
+        
+        try (Connection connection = dataSource.getConnection()) {
+            savePlayerDataInternal(connection, uuid, removeCacheAndUnlock);
+        } catch (SQLException e) {
+            plugin.getLogger().warning("Error saving player " + uuid + ": " + e.getMessage());
+        }
+    }
+
+    public void savePlayerData(Collection<UUID> uuids, boolean removeCacheAndUnlock) {
+        if (dataSource == null || dataSource.isClosed()) return;
+        if (uuids == null || uuids.isEmpty()) return;
+
+        try (Connection connection = dataSource.getConnection()) {
+            for (UUID uuid : uuids) {
+                plugin.sendDebug("§7儲存玩家 " + uuid + " 的資料...");
+                savePlayerDataInternal(connection, uuid, removeCacheAndUnlock);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Could not open database connection for batch save!");
+        }
+    }
+
+    private void savePlayerDataInternal(Connection connection, UUID uuid, boolean removeCacheAndUnlock) throws SQLException {
+        if (!dataLoadedPlayers.contains(uuid)) return;
+        Map<String, Object> updates = new java.util.HashMap<>();
+        try {
+            Boolean cachedArmor = armorHiddenCache.get(uuid);
+            if (cachedArmor != null) updates.put("hidden_armor", cachedArmor);
+
+            String cachedHostname = hostnameCache.get(uuid);
+            if (cachedHostname != null) updates.put("hostname", cachedHostname);
+
+            String cachedIp = ipCache.get(uuid);
+            if (cachedIp != null) updates.put("ip_address", cachedIp);
+
+            if (removeCacheAndUnlock) updates.put("is_data_saved", true);
+
+            if (updates.isEmpty()) return;
+
+            executeUpdate(connection, uuid, updates);
+
+            if (removeCacheAndUnlock) plugin.sendDebug("資料已儲存並解鎖: " + uuid);
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            if (removeCacheAndUnlock) clearCache(uuid);
+        }
+    }
+
+    public CompletableFuture<Void> savePlayerDataAsync(UUID uuid, boolean removeCacheAndUnlock) {
+        return CompletableFuture.runAsync(() -> savePlayerData(uuid, removeCacheAndUnlock), runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
 
     public synchronized void upsertPlayerData(UUID uuid, String playerName) throws SQLException {
         if (uuid == null || playerName == null || playerName.isEmpty()) return;
@@ -184,138 +272,97 @@ public class DatabaseUtil {
         }
     }
 
-    public void close() {
-        if (dataSource != null && !dataSource.isClosed()) dataSource.close();
-    }
-
     public CompletableFuture<Void> loadAndCreateCache(UUID uuid) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        attemptLoad(uuid, 0, future);
+        attemptLoad(uuid, future);
         return future;
     }
 
-    private void attemptLoad(UUID uuid, int retryCount, CompletableFuture<Void> future) {
+    private void attemptLoad(UUID uuid, CompletableFuture<Void> future) {
         TaskScheduler.runAsync(plugin, () -> {
-            try {
-                if (uuid == null || dataSource == null || dataSource.isClosed()) {
-                    future.complete(null);
-                    return;
-                }
-
-                // Check is_data_saved true
-                try (Connection connection = dataSource.getConnection()) {
-                    boolean isDataLocked = false;
-
-                    String lockSql = "UPDATE player_data SET is_data_saved = 0 WHERE uuid = ? AND is_data_saved = 1";
-                    try (PreparedStatement ps = connection.prepareStatement(lockSql)) {
-                        ps.setString(1, uuid.toString());
-                        int rowsAffected = ps.executeUpdate();
-                        isDataLocked = rowsAffected > 0;
+            int retryCount = 0;
+            while (retryCount < MaxRetry) {
+                try {
+                    if (uuid == null || dataSource == null || dataSource.isClosed()) {
+                        future.complete(null);
+                        return;
                     }
 
-                    if (isDataLocked) {
-                        String sql = "SELECT hidden_armor, hostname, ip_address FROM player_data WHERE uuid = ?";
-                        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                            ps.setString(1, uuid.toString());
-                            try (ResultSet rs = ps.executeQuery()) {
-                                if (rs.next()) {
-                                    boolean dataHiddenArmor = rs.getBoolean("hidden_armor");
-                                    armorHiddenCache.put(uuid, dataHiddenArmor);
+                    // Check is_data_saved true
+                    try (Connection connection = dataSource.getConnection()) {
+                        boolean isDataLocked = false;
 
-                                    String dataHostname = rs.getString("hostname");
-                                    hostnameCache.put(uuid, (dataHostname != null) ? dataHostname : "UnknownHostname");
-            
-                                    String dataIp = rs.getString("ip_address");
-                                    ipCache.put(uuid, (dataIp != null) ? dataIp : "UnknownIp");
-                                } else {
-                                    armorHiddenCache.put(uuid, false);
-                                    hostnameCache.put(uuid, "UnknownHostname");
-                                    ipCache.put(uuid, "UnknownIp");
+                        String lockSql = "UPDATE player_data SET is_data_saved = 0 WHERE uuid = ? AND is_data_saved = 1";
+                        try (PreparedStatement ps = connection.prepareStatement(lockSql)) {
+                            ps.setString(1, uuid.toString());
+                            int rowsAffected = ps.executeUpdate();
+                            isDataLocked = rowsAffected > 0;
+                        }
+
+                        if (isDataLocked) {
+                            String sql = "SELECT hidden_armor, hostname, ip_address FROM player_data WHERE uuid = ?";
+                            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                                ps.setString(1, uuid.toString());
+                                try (ResultSet rs = ps.executeQuery()) {
+                                    if (rs.next()) {
+                                        boolean dataHiddenArmor = rs.getBoolean("hidden_armor");
+                                        armorHiddenCache.put(uuid, dataHiddenArmor);
+
+                                        String dataHostname = rs.getString("hostname");
+                                        hostnameCache.put(uuid, (dataHostname != null) ? dataHostname : "UnknownHostname");
+                
+                                        String dataIp = rs.getString("ip_address");
+                                        ipCache.put(uuid, (dataIp != null) ? dataIp : "UnknownIp");
+                                    } else {
+                                        armorHiddenCache.put(uuid, false);
+                                        hostnameCache.put(uuid, "UnknownHostname");
+                                        ipCache.put(uuid, "UnknownIp");
+                                    }
                                 }
                             }
-                        }
 
-                        dataLoadedPlayers.add(uuid);
-                        plugin.sendDebug("資料已載入並鎖定: " + uuid);
+                            dataLoadedPlayers.add(uuid);
+                            plugin.sendDebug("資料已載入並鎖定: " + uuid);
 
-                        future.complete(null);
-                    // Retry
-                    } else {
-                        plugin.sendDebug("資料尚未儲存: " + uuid + "，正在重試... (" + (retryCount+1) + ")");
-                        if (retryCount+1 >= MaxRetry) {
-                            TaskScheduler.runTask(plugin, () -> {
-                                Player player = Bukkit.getPlayer(uuid);
-                                if (player != null) player.kick(Component.text("§c無法同步玩家資料 請找管理員協助"));
-                            });
-                            plugin.getLogger().warning("Data sync timeout for " + uuid);
-                            future.completeExceptionally(new RuntimeException("Data sync timeout"));
+                            future.complete(null);
+                            return;
                         } else {
-                            TaskScheduler.runTaskLater(plugin, () -> {
-                                attemptLoad(uuid, retryCount + 1, future);
-                            }, RetryDelay);
+                            plugin.sendDebug("資料尚未儲存: " + uuid + "，正在重試... (" + (retryCount+1) + ")");
+                            retryCount++;
+                            try {
+                                Thread.sleep(RetryDelay * 50);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                future.completeExceptionally(e);
+                                return;
+                            }
                         }
                     }
+                } catch (SQLException e) {
+                    plugin.getLogger().warning("Failed to load player data for " + uuid + ": " + e.getMessage());
+                    future.completeExceptionally(e);
+                    return;
                 }
-            } catch (SQLException e) {
-                plugin.getLogger().warning("Failed to load player data for " + uuid + ": " + e.getMessage());
-                future.completeExceptionally(e);
             }
+
+            TaskScheduler.runTask(plugin, () -> {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null) player.kick(Component.text("§c無法同步玩家資料 請找管理員協助"));
+            });
+            plugin.getLogger().warning("Data sync timeout for " + uuid);
+            future.completeExceptionally(new RuntimeException("Data sync timeout"));
         });
     }
 
-    public CompletableFuture<Void> saveAndRemoveCache(UUID uuid) {
-        return CompletableFuture.runAsync(() -> saveAndRemoveCacheSync(uuid), runnable -> TaskScheduler.runAsync(plugin, runnable));
+    private void clearCache(UUID uuid) {
+        dataLoadedPlayers.remove(uuid);
+        armorHiddenCache.remove(uuid);
+        hostnameCache.remove(uuid);
+        ipCache.remove(uuid);
     }
-    public void saveAndRemoveCacheSync(UUID uuid) {
-        if (uuid == null || dataSource == null || dataSource.isClosed()) return;
+    // endregion 資料保存與載入
 
-        if (!dataLoadedPlayers.contains(uuid)) {
-            plugin.sendDebug("玩家 " + uuid + " 資料未完全載入或已離線 跳過資料庫儲存並清除快取");
-            armorHiddenCache.remove(uuid);
-            hostnameCache.remove(uuid);
-            ipCache.remove(uuid);
-            return;
-        }
-
-        try (Connection connection = dataSource.getConnection()) {
-            // 開啟事務
-            connection.setAutoCommit(false);
-            try {
-                //ArmorHidden
-                Boolean cachedArmor = armorHiddenCache.get(uuid);
-                if (cachedArmor != null) executeUpdate(connection, uuid, "hidden_armor", cachedArmor);
-
-                //Hostname
-                String cachedHostname = hostnameCache.get(uuid);
-                if (cachedHostname != null) executeUpdate(connection, uuid, "hostname", cachedHostname);
-                
-                //IP
-                String cachedIp = ipCache.get(uuid);
-                if (cachedIp != null) executeUpdate(connection, uuid, "ip_address", cachedIp);
-
-                // Set is_data_saved true
-                executeUpdate(connection, uuid, "is_data_saved", true);
-                
-                // 提交事務
-                connection.commit();
-                plugin.sendDebug("資料已儲存並解鎖: " + uuid);
-            } catch (SQLException e) {
-                connection.rollback();
-                plugin.sendDebug("資料儲存失敗: " + e.getMessage());
-                throw e;
-            } finally {
-                connection.setAutoCommit(true);
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("無法保存" + uuid +"的資料到資料庫: " + e.getMessage());
-        } finally {
-            dataLoadedPlayers.remove(uuid);
-            armorHiddenCache.remove(uuid);
-            hostnameCache.remove(uuid);
-            ipCache.remove(uuid);
-        }
-    }
-
+    // region 資料庫操作
     private CompletableFuture<Void> updateDatabaseField(UUID uuid, String columnName, Object value) {
         return CompletableFuture.runAsync(() -> {
             try {
@@ -323,7 +370,9 @@ public class DatabaseUtil {
                 if (dataSource == null || dataSource.isClosed()) connectAndInitPlayerTable();
 
                 try (Connection connection = dataSource.getConnection()) {
-                    executeUpdate(connection, uuid, columnName, value);
+                    Map<String, Object> updates = new java.util.HashMap<>();
+                    updates.put(columnName, value);
+                    executeUpdate(connection, uuid, updates);
                 }
             } catch (SQLException e) {
                 plugin.getLogger().warning("Failed to update " + columnName + " for " + uuid + ": " + e.getMessage());
@@ -331,11 +380,24 @@ public class DatabaseUtil {
         }, runnable -> TaskScheduler.runAsync(plugin, runnable));
     }
 
-    private void executeUpdate(Connection connection, UUID uuid, String columnName, Object value) throws SQLException {
-        String sql = "UPDATE player_data SET " + columnName + " = ? WHERE uuid = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setObject(1, value);
-            ps.setString(2, uuid.toString());
+    private void executeUpdate(Connection connection, UUID uuid, Map<String, Object> updates) throws SQLException {
+        if (updates == null || updates.isEmpty()) return;
+
+        StringBuilder sql = new StringBuilder("UPDATE player_data SET ");
+        int i = 0;
+        for (Map.Entry<String, Object> entry : updates.entrySet()) {
+            sql.append(entry.getKey()).append(" = ?");
+            if (i < updates.size() - 1) sql.append(", ");
+            i++;
+        }
+        sql.append(" WHERE uuid = ? AND is_data_saved = 0");
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            for (Map.Entry<String, Object> entry : updates.entrySet()) {
+                ps.setObject(paramIndex++, entry.getValue());
+            }
+            ps.setString(paramIndex, uuid.toString());
             ps.executeUpdate();
         }
     }
@@ -373,27 +435,30 @@ public class DatabaseUtil {
             return builder.build();
         }
     }
+    // endregion 資料庫操作
 
-// #region ArmorHidden處理
+    // region ArmorHidden處理
     public boolean getArmorHiddenState(UUID uuid) {
         if (uuid == null) return false;
         return armorHiddenCache.getOrDefault(uuid, false);
     }
 
     public CompletableFuture<Void> setArmorHiddenState(UUID uuid, boolean state) {
+        if (!dataLoadedPlayers.contains(uuid)) return CompletableFuture.completedFuture(null);
         armorHiddenCache.put(uuid, state);
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hidden_armor", state);
         return CompletableFuture.completedFuture(null);
     }
-// #endregion
+    // endregion ArmorHidden處理
 
-// #region Hostname/IP處理
+    // region Hostname/IP處理
     public String getHostname(UUID uuid) {
         if (uuid == null) return null;
         return hostnameCache.getOrDefault(uuid, "UnknownHostname");
     }
 
     public CompletableFuture<Void> setHostname(UUID uuid, String hostname) {
+        if (!dataLoadedPlayers.contains(uuid)) return CompletableFuture.completedFuture(null);
         hostnameCache.put(uuid, hostname);
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hostname", hostname);
         return CompletableFuture.completedFuture(null);
@@ -405,9 +470,10 @@ public class DatabaseUtil {
     }
 
     public CompletableFuture<Void> setIpAddress(UUID uuid, String ip) {
+        if (!dataLoadedPlayers.contains(uuid)) return CompletableFuture.completedFuture(null);
         ipCache.put(uuid, ip);
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "ip_address", ip);
         return CompletableFuture.completedFuture(null);
     }
-// #endregion
+    // endregion Hostname/IP處理
 }

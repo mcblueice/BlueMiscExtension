@@ -64,7 +64,7 @@ public class PlayerDataListener implements Listener {
         if (databaseUtil == null) return;
 
         Player player = event.getPlayer();
-        databaseUtil.saveAndRemoveCache(player.getUniqueId());
+        databaseUtil.savePlayerData(player.getUniqueId(), true);
         loginData.remove(player.getUniqueId());
     }
 }

@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.AbsorptionScale.AbsorptionScale;
 //import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
 
@@ -45,6 +46,10 @@ public final class BlueMiscPlaceholder extends PlaceholderExpansion {
                 return databaseUtil.getIp(player.getUniqueId());
             case "hostname":
                 return databaseUtil.getHostname(player.getUniqueId());
+            case "absorption":
+                return String.valueOf(AbsorptionScale.getAbsorption(player.getUniqueId()));
+            case "maxabsorption":
+                return String.valueOf(AbsorptionScale.getMaxAbsorption(player.getUniqueId()));
         }
         return "";
     }

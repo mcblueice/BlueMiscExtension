@@ -7,18 +7,18 @@ Database:
     database: database
     user: user
     password: password
-  SyncWrite: true
-  AutosaveInterval: 30000
+  SyncWrite: false #資料更新時是否同步寫入資料庫
+  AutosaveInterval: 12000 #自動保存間隔 單位tick
 Features:
   AbsorptionScale:
     enable: true
-    max_amount: 20
+    max_amount: 20 #吸收生命縮放值
   DamageIndicatorLimiter:
     enable: true
-    max_amount: 20
+    max_amount: 20 #受擊粒子最大數量
   ShulkerBox:
     enable: true
-    cooldown: 1000
+    cooldown: 1000 #冷卻時間 單位毫秒
   Elevator:
     enable: true
     elevators:
