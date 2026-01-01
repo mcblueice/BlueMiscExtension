@@ -20,8 +20,11 @@
 |------|------|------|
 | `/bluemiscextension reload` | 重新載入 `config.yml` 與 `lang.yml` | `bluemiscextension.reload` |
 | `/bluemiscextension debug` | 切換偵錯訊息顯示（玩家或主控台） | `bluemiscextension.debug` |
+| `/bluemiscextension status` | 查看伺服器效能與資料庫連線狀態 | `bluemiscextension.status` |
 | `/bluemiscextension armorhide` | 切換盔甲隱身狀態 | `bluemiscextension.armorhide` |
+| `/bluemiscextension armorhide <player>` | 為其他玩家切換盔甲隱身狀態 | `bluemiscextension.armorhide.other` |
 | `/bluemiscextension workbench <type>` | 開啟虛擬工作台 | `bluemiscextension.workbench`（子權限見下方） |
+| `/bluemiscextension workbench <type> <player>` | 為其他玩家開啟虛擬工作台 | `bluemiscextension.workbench.other`（子權限見下方） |
 
 ### workbench 類型與權限
 

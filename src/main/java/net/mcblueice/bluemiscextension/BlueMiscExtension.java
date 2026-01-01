@@ -13,7 +13,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
+import net.mcblueice.bluemiscextension.utils.ServerUtil;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluemiscextension.commands.Commands;
 import net.mcblueice.bluemiscextension.features.FeatureManager;
 
 public class BlueMiscExtension extends JavaPlugin {
@@ -21,6 +23,7 @@ public class BlueMiscExtension extends JavaPlugin {
     private Logger logger;
     private FeatureManager featureManager;
     private DatabaseUtil databaseUtil;
+    private ServerUtil serverUtil;
     private ConfigManager lang;
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
 
@@ -35,6 +38,8 @@ public class BlueMiscExtension extends JavaPlugin {
         logger = getLogger();
         saveDefaultConfig();
         this.lang = new ConfigManager(this);
+
+        serverUtil = new ServerUtil();
 
         databaseUtil = new DatabaseUtil(this);
         try {
@@ -107,4 +112,5 @@ public class BlueMiscExtension extends JavaPlugin {
     public DatabaseUtil getDatabaseUtil() { return databaseUtil; }
     public ConfigManager getLanguageManager() { return lang; }
     public FeatureManager getFeatureManager() { return featureManager; }
+    public ServerUtil getServerUtil() { return serverUtil; }
 }

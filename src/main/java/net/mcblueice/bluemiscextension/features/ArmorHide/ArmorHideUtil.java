@@ -1,24 +1,35 @@
 package net.mcblueice.bluemiscextension.features.ArmorHide;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.attribute.AttributeModifier.Operation;
+
+import com.google.common.collect.Multimap;
+
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
+import net.mcblueice.bluemiscextension.utils.ServerUtil;
 
 public final class ArmorHideUtil {
     private ArmorHideUtil() {}
 
     public static ItemStack armorConvert(ItemStack item, ConfigManager lang) {
+        DecimalFormat df = new DecimalFormat("#.##");
         if (item == null) return null;
 
         // material
@@ -71,19 +82,15 @@ public final class ArmorHideUtil {
         // displayname
         Component displayComponent = oldMeta.displayName();
         if (displayComponent != null) {
-            if (prefix.equals("CHAINMAIL")) displayComponent = Component.text("§e").append(displayComponent);
-            newMeta.displayName(displayComponent);
+            if (prefix.equals("CHAINMAIL")) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
         } else {
-            String armorKey = "ArmorHide.ArmorNames." + item.getType().name();
-            String armorName = lang.get(armorKey);
-            if (armorName == null || armorName.isEmpty() || armorName.equals(armorKey)) armorName = item.getType().name().replace("_", " ");
-            if (prefix.equals("CHAINMAIL")) armorName = "§e" + armorName;
-            newMeta.displayName(Component.text(armorName).decoration(TextDecoration.ITALIC, false));
+            displayComponent = Component.translatable(item.getType().getItemTranslationKey());
+            if (prefix.equals("CHAINMAIL")) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
         }
+        newMeta.displayName(displayComponent.decoration(TextDecoration.ITALIC, false));
 
         // lore
         List<Component> loreComponent = oldMeta.lore() != null ? new ArrayList<>(oldMeta.lore()) : new ArrayList<>();
-        loreComponent.add(Component.text(""));
 
         // enchants
         for (Enchantment ench : oldMeta.getEnchants().keySet()) {
@@ -92,58 +99,71 @@ public final class ArmorHideUtil {
         }
 
         // attributes
-        if (oldMeta.getAttributeModifiers() != null && !oldMeta.getAttributeModifiers().isEmpty()) {
-            loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.EQUIPMENT")));
-            oldMeta.getAttributeModifiers().forEach((attribute, modifier) -> {
-                String attributeKey = lang.get("ArmorHide.Attributes." + attribute.getKey().getKey());
+        newMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        if (!oldMeta.hasItemFlag(ItemFlag.HIDE_ATTRIBUTES)) {
+            if (oldMeta.getAttributeModifiers() != null && !oldMeta.getAttributeModifiers().isEmpty()) {
+                EquipmentSlotGroup[] slots = {
+                    EquipmentSlotGroup.ANY,
+                    EquipmentSlotGroup.ARMOR,
+                    EquipmentSlotGroup.HAND,
+                    EquipmentSlotGroup.MAINHAND,
+                    EquipmentSlotGroup.OFFHAND,
+                    EquipmentSlotGroup.FEET,
+                    EquipmentSlotGroup.LEGS,
+                    EquipmentSlotGroup.CHEST,
+                    EquipmentSlotGroup.HEAD
+                };
 
-                double value = modifier.getAmount();
-                String text;
-                if (modifier.getOperation() == Operation.ADD_NUMBER) {
-                    text = lang.get(attributeKey, String.valueOf((int) value));
-                } else if (modifier.getOperation() == Operation.ADD_SCALAR) {
-                    text = lang.get(attributeKey, String.valueOf((int) (value * 100)) + "%");
-                } else if (modifier.getOperation() == Operation.MULTIPLY_SCALAR_1) {
-                    text = lang.get(attributeKey, String.valueOf((int) ((value + 1) * 100)) + "%");
-                } else {
-                    text = attributeKey + ": " + value;
+                for (EquipmentSlotGroup slot : slots) {
+                    List<Map.Entry<Attribute, AttributeModifier>> activeModifiers = new ArrayList<>();
+                    for (Map.Entry<Attribute, AttributeModifier> entry : oldMeta.getAttributeModifiers().entries()) {
+                        AttributeModifier modifier = entry.getValue();
+                        if (modifier.getSlotGroup().equals(slot)) activeModifiers.add(entry);
+                    }
+
+                    if (!activeModifiers.isEmpty()) {
+                        loreComponent.add(Component.empty());
+                        loreComponent.add(Component.translatable(getSlotKey(slot)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+
+                        for (Map.Entry<Attribute, AttributeModifier> entry : activeModifiers) {
+                            addAttributeLore(loreComponent, entry.getKey(), entry.getValue(), df);
+                        }
+                    }
+                }
+            } else {
+                EquipmentSlot slot = null;
+                String slotKey = null;
+                if (equipmentType.equals("HELMET")) {
+                    slot = EquipmentSlot.HEAD;
+                    slotKey = "head";
+                }
+                if (equipmentType.equals("CHESTPLATE")) {
+                    slot = EquipmentSlot.CHEST;
+                    slotKey = "chest";
+                }
+                if (equipmentType.equals("LEGGINGS")) {
+                    slot = EquipmentSlot.LEGS;
+                    slotKey = "legs";
+                }
+                if (equipmentType.equals("BOOTS")) {
+                    slot = EquipmentSlot.FEET;
+                    slotKey = "feet";
                 }
 
-                loreComponent.add(Component.text(text));
-            });
-        } else {
-            int slotIndex = -1;
-            if (equipmentType.equals("HELMET")) {
-                slotIndex = 0;
-                loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.HELMET")));
-            }
-            if (equipmentType.equals("CHESTPLATE")) {
-                slotIndex = 1;
-                loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.CHESTPLATE")));
-            }
-            if (equipmentType.equals("LEGGINGS")) {
-                slotIndex = 2;
-                loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.LEGGINGS")));
-            }
-            if (equipmentType.equals("BOOTS")) {
-                slotIndex = 3;
-                loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.BOOTS")));
-            }
+                if (slot != null) {
+                    loreComponent.add(Component.empty());
+                    loreComponent.add(Component.translatable("item.modifiers." + slotKey)
+                            .color(NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, false));
 
-            int[] armorList = getArmor(prefix);
-            int[] toughnessList = getToughness(prefix);
-            int[] knockbackList = getKnockback(prefix);
-            if (armorList != null && armorList.length > slotIndex) {
-                int armor = armorList[slotIndex];
-                if (armor > 0) loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.armor", armor)));
-            }
-            if (toughnessList != null && toughnessList.length > slotIndex) {
-                int toughness = toughnessList[slotIndex];
-                if (toughness > 0) loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.armor_toughness", toughness)));
-            }
-            if (knockbackList != null && knockbackList.length > slotIndex) {
-                int knockback = knockbackList[slotIndex];
-                if (knockback > 0) loreComponent.add(Component.text(lang.get("ArmorHide.Attributes.knockback_resistance", knockback)));
+                    Multimap<Attribute, AttributeModifier> defaults = item.getType().getDefaultAttributeModifiers(slot);
+
+                    for (Map.Entry<Attribute, AttributeModifier> entry : defaults.entries()) {
+                        if (entry.getValue().getAmount() == 0) continue;
+                        addAttributeLore(loreComponent, entry.getKey(), entry.getValue(), df);
+                    }
+                    addEnchantmentLore(loreComponent, item, df, slot);
+                }
             }
         }
 
@@ -155,7 +175,11 @@ public final class ArmorHideUtil {
                 int damage = ((Damageable) oldMeta).getDamage();
                 int maxDurability = item.getType().getMaxDurability();
                 int remaining = maxDurability - damage;
-                if (damage > 0) loreComponent.add(Component.text(lang.get("ArmorHide.Durability", remaining, maxDurability)));
+                if (damage > 0) {
+                    loreComponent.add(Component.translatable("item.durability", Component.text(remaining), Component.text(maxDurability))
+                            .color(NamedTextColor.WHITE)
+                            .decoration(TextDecoration.ITALIC, false));
+                }
             }
         }
 
@@ -166,30 +190,107 @@ public final class ArmorHideUtil {
         return newItem;
     }
 
-    private static int[] getArmor(String prefix) {
-        switch (prefix) {
-            case "NETHERITE": return new int[] {3,8,6,3};
-            case "GOLDEN": return new int[] {2,5,3,1};
-            case "DIAMOND": return new int[] {3,8,6,3};
-            case "IRON": return new int[] {2,6,5,2};
-            case "COPPER": return new int[] {2,4,3,1};
-            case "CHAINMAIL": return new int[] {2,5,4,1};
-            case "LEATHER": return new int[] {1,3,2,1};
-            case "TURTLE": return new int[] {2,0,0,0};
-            default: return new int[] {0,0,0,0};
+    private static void addEnchantmentLore(List<Component> loreComponent, ItemStack item, DecimalFormat df, EquipmentSlot slot) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        for (Map.Entry<Enchantment, Integer> entry : meta.getEnchants().entrySet()) {
+            Enchantment ench = entry.getKey();
+            int level = entry.getValue();
+            String key = ench.getKey().getKey();
+
+            // 迅捷潛行 - 護腿
+            if (key.equals("swift_sneak") && slot == EquipmentSlot.LEGS) {
+                double amount = level * 0.15;
+                loreComponent.add(Component.text()
+                        .append(Component.text("+" + df.format(amount) + " "))
+                        .append(Component.translatable(getAttributeKey(Attribute.PLAYER_SNEAKING_SPEED)))
+                        .color(NamedTextColor.BLUE)
+                        .decoration(TextDecoration.ITALIC, false)
+                        .build());
+            }
+
+            // 深海探索者 - 靴子
+            if (key.equals("depth_strider") && slot == EquipmentSlot.FEET) {
+                double amount = level * 0.33;
+                loreComponent.add(Component.text()
+                        .append(Component.text("+" + df.format(amount) + " "))
+                        .append(Component.translatable(getAttributeKey(Attribute.GENERIC_WATER_MOVEMENT_EFFICIENCY)))
+                        .color(NamedTextColor.BLUE)
+                        .decoration(TextDecoration.ITALIC, false)
+                        .build());
+            }
+
+            // 水下呼吸 - 頭盔
+            if (key.equals("respiration") && slot == EquipmentSlot.HEAD) {
+                double amount = level * 1.0;
+                loreComponent.add(Component.text()
+                        .append(Component.text("+" + df.format(amount) + " "))
+                        .append(Component.translatable(getAttributeKey(Attribute.GENERIC_OXYGEN_BONUS)))
+                        .color(NamedTextColor.BLUE)
+                        .decoration(TextDecoration.ITALIC, false)
+                        .build());
+            }
+
+            // 水下挖掘 - 頭盔
+            if (key.equals("aqua_affinity") && slot == EquipmentSlot.HEAD) {
+                loreComponent.add(Component.text()
+                        .append(Component.text("+400% "))
+                        .append(Component.translatable(getAttributeKey(Attribute.PLAYER_SUBMERGED_MINING_SPEED)))
+                        .color(NamedTextColor.BLUE)
+                        .decoration(TextDecoration.ITALIC, false)
+                        .build());
+            }
         }
     }
-    private static int[] getToughness(String prefix) {
-        switch (prefix) {
-            case "NETHERITE": return new int[] {3,3,3,3};
-            case "DIAMOND": return new int[] {2,2,2,2};
-            default: return new int[] {0,0,0,0};
-        }
+
+    private static String getSlotKey(EquipmentSlotGroup slot) {
+        if (slot.equals(EquipmentSlotGroup.ARMOR)) return "item.modifiers.armor";
+        if (slot.equals(EquipmentSlotGroup.HAND)) return "item.modifiers.hand";
+        if (slot.equals(EquipmentSlotGroup.MAINHAND)) return "item.modifiers.mainhand";
+        if (slot.equals(EquipmentSlotGroup.OFFHAND)) return "item.modifiers.offhand";
+        if (slot.equals(EquipmentSlotGroup.FEET)) return "item.modifiers.feet";
+        if (slot.equals(EquipmentSlotGroup.LEGS)) return "item.modifiers.legs";
+        if (slot.equals(EquipmentSlotGroup.CHEST)) return "item.modifiers.chest";
+        if (slot.equals(EquipmentSlotGroup.HEAD)) return "item.modifiers.head";
+        return "item.modifiers.any";
     }
-    private static int[] getKnockback(String prefix) {
-        switch (prefix) {
-            case "NETHERITE": return new int[] {1,1,1,1};
-            default: return new int[] {0,0,0,0};
+    private static String getAttributeKey(Attribute attribute) {
+        String attributeBaseKey = (ServerUtil.isNewAttributeKey()) ? "attribute.name." : "attribute.name.generic.";
+        return attributeBaseKey + attribute.getKey().getKey();
+    }
+
+    private static void addAttributeLore(List<Component> loreComponent, Attribute attribute, AttributeModifier modifier, DecimalFormat df) {
+        double amount = modifier.getAmount();
+        double displayValue;
+        String displaySuffix = "";
+
+        switch (modifier.getOperation()) {
+            case ADD_SCALAR:
+                displayValue = amount * 100;
+                displaySuffix = "%";
+                break;
+            case MULTIPLY_SCALAR_1:
+                displayValue = (amount + 1) * 100;
+                displaySuffix = "%";
+                break;
+            default:
+                if (attribute == Attribute.GENERIC_KNOCKBACK_RESISTANCE) {
+                    displayValue = amount * 10;
+                } else {
+                    displayValue = amount;
+                }
+                break;
         }
+
+        NamedTextColor displayColor = amount > 0 ? NamedTextColor.BLUE : NamedTextColor.RED;
+        String prefixSign = amount > 0 ? "+" : "";
+
+        loreComponent.add(Component.text()
+                .append(Component.text(prefixSign + df.format(displayValue) + displaySuffix + " "))
+                .append(Component.translatable(getAttributeKey(attribute)))
+                .color(displayColor)
+                .decoration(TextDecoration.ITALIC, false)
+                .build());
     }
 }

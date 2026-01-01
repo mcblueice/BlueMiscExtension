@@ -7,6 +7,8 @@ Database:
     database: database
     user: user
     password: password
+  SyncWrite: true
+  AutosaveInterval: 30000
 Features:
   AbsorptionScale:
     enable: true

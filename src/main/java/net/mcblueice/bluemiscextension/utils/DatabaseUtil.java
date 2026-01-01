@@ -1,16 +1,5 @@
 package net.mcblueice.bluemiscextension.utils;
 
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
-
-import net.mcblueice.bluemiscextension.BlueMiscExtension;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import net.kyori.adventure.text.Component;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,6 +10,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariPoolMXBean;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent.Builder;
+import net.mcblueice.bluemiscextension.BlueMiscExtension;
 
 public class DatabaseUtil {
     private final BlueMiscExtension plugin;
@@ -266,56 +267,52 @@ public class DatabaseUtil {
         return CompletableFuture.runAsync(() -> saveAndRemoveCacheSync(uuid), runnable -> TaskScheduler.runAsync(plugin, runnable));
     }
     public void saveAndRemoveCacheSync(UUID uuid) {
-        try {
-            if (uuid == null || dataSource == null || dataSource.isClosed()) return;
+        if (uuid == null || dataSource == null || dataSource.isClosed()) return;
 
-            if (!dataLoadedPlayers.contains(uuid)) {
-                plugin.sendDebug("玩家 " + uuid + " 資料未完全載入或已離線 跳過資料庫儲存並清除快取");
-                armorHiddenCache.remove(uuid);
-                hostnameCache.remove(uuid);
-                ipCache.remove(uuid);
-                return;
+        if (!dataLoadedPlayers.contains(uuid)) {
+            plugin.sendDebug("玩家 " + uuid + " 資料未完全載入或已離線 跳過資料庫儲存並清除快取");
+            armorHiddenCache.remove(uuid);
+            hostnameCache.remove(uuid);
+            ipCache.remove(uuid);
+            return;
+        }
+
+        try (Connection connection = dataSource.getConnection()) {
+            // 開啟事務
+            connection.setAutoCommit(false);
+            try {
+                //ArmorHidden
+                Boolean cachedArmor = armorHiddenCache.get(uuid);
+                if (cachedArmor != null) executeUpdate(connection, uuid, "hidden_armor", cachedArmor);
+
+                //Hostname
+                String cachedHostname = hostnameCache.get(uuid);
+                if (cachedHostname != null) executeUpdate(connection, uuid, "hostname", cachedHostname);
+                
+                //IP
+                String cachedIp = ipCache.get(uuid);
+                if (cachedIp != null) executeUpdate(connection, uuid, "ip_address", cachedIp);
+
+                // Set is_data_saved true
+                executeUpdate(connection, uuid, "is_data_saved", true);
+                
+                // 提交事務
+                connection.commit();
+                plugin.sendDebug("資料已儲存並解鎖: " + uuid);
+            } catch (SQLException e) {
+                connection.rollback();
+                plugin.sendDebug("資料儲存失敗: " + e.getMessage());
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
-
-            try (Connection connection = dataSource.getConnection()) {
-                // 開啟事務
-                connection.setAutoCommit(false);
-                try {
-                    //ArmorHidden
-                    Boolean cachedArmor = armorHiddenCache.get(uuid);
-                    if (cachedArmor != null) executeUpdate(connection, uuid, "hidden_armor", cachedArmor);
-
-                    //Hostname
-                    String cachedHostname = hostnameCache.get(uuid);
-                    if (cachedHostname != null) executeUpdate(connection, uuid, "hostname", cachedHostname);
-                    
-                    //IP
-                    String cachedIp = ipCache.get(uuid);
-                    if (cachedIp != null) executeUpdate(connection, uuid, "ip_address", cachedIp);
-
-                    // Set is_data_saved true
-                    executeUpdate(connection, uuid, "is_data_saved", true);
-                    
-                    // 提交事務
-                    connection.commit();
-
-                    dataLoadedPlayers.remove(uuid);
-                    armorHiddenCache.remove(uuid);
-                    hostnameCache.remove(uuid);
-                    ipCache.remove(uuid);
-
-                    plugin.sendDebug("資料已儲存並解鎖: " + uuid);
-                } catch (SQLException e) {
-                    connection.rollback();
-                    plugin.sendDebug("資料儲存失敗: " + e.getMessage());
-                    throw e;
-                } finally {
-                    connection.setAutoCommit(true);
-                }
-            }
-
         } catch (SQLException e) {
-            plugin.getLogger().warning("Failed to save and remove cache for " + uuid + ": " + e.getMessage());
+            plugin.getLogger().warning("無法保存" + uuid +"的資料到資料庫: " + e.getMessage());
+        } finally {
+            dataLoadedPlayers.remove(uuid);
+            armorHiddenCache.remove(uuid);
+            hostnameCache.remove(uuid);
+            ipCache.remove(uuid);
         }
     }
 
@@ -343,6 +340,40 @@ public class DatabaseUtil {
         }
     }
 
+    public Component getDatabaseStatus() {
+        Builder builder = Component.text()
+            .append(Component.text("§8§m---------§r§b資料庫狀態§8§m---------\n"))
+            .append(Component.text("§6類型: §e" + dbType + "\n"))
+            .append(Component.text("§c無法取得資料庫狀態!\n"))
+            .append(Component.text("§8§m--------------------------"));
+
+        if (dataSource == null || dataSource.isClosed()) return builder.build();
+
+        try {
+            HikariPoolMXBean poolProxy = dataSource.getHikariPoolMXBean();
+            if (poolProxy == null) return builder.build();
+
+            int active = poolProxy.getActiveConnections();
+            int idle = poolProxy.getIdleConnections();
+            int total = poolProxy.getTotalConnections();
+            int threadsAwaiting = poolProxy.getThreadsAwaitingConnection();
+            int maxPoolSize = dataSource.getMaximumPoolSize();
+
+            builder = Component.text()
+                .append(Component.text("§8§m---------§r§b資料庫狀態§8§m---------\n"))
+                .append(Component.text("§6類型: §e" + dbType + "\n"))
+                .append(Component.text("§6工作連線 (Active): §e" + active + "\n"))
+                .append(Component.text("§6閒置連線 (Idle): §e" + idle + "\n"))
+                .append(Component.text("§6總連線數 (Total): §e" + total + " / " + maxPoolSize + "\n"))
+                .append(Component.text(((threadsAwaiting > 0) ? "§c⚠" : "§6") + "等待連線 (Awaiting): §e" + threadsAwaiting + "\n"))
+                .append(Component.text("§8§m--------------------------"));
+
+            return builder.build();
+        } catch (Exception e) {
+            return builder.build();
+        }
+    }
+
 // #region ArmorHidden處理
     public boolean getArmorHiddenState(UUID uuid) {
         if (uuid == null) return false;
@@ -351,7 +382,8 @@ public class DatabaseUtil {
 
     public CompletableFuture<Void> setArmorHiddenState(UUID uuid, boolean state) {
         armorHiddenCache.put(uuid, state);
-        return updateDatabaseField(uuid, "hidden_armor", state);
+        if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hidden_armor", state);
+        return CompletableFuture.completedFuture(null);
     }
 // #endregion
 
@@ -363,7 +395,8 @@ public class DatabaseUtil {
 
     public CompletableFuture<Void> setHostname(UUID uuid, String hostname) {
         hostnameCache.put(uuid, hostname);
-        return updateDatabaseField(uuid, "hostname", hostname);
+        if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hostname", hostname);
+        return CompletableFuture.completedFuture(null);
     }
 
     public String getIp(UUID uuid) {
@@ -373,7 +406,8 @@ public class DatabaseUtil {
 
     public CompletableFuture<Void> setIpAddress(UUID uuid, String ip) {
         ipCache.put(uuid, ip);
-        return updateDatabaseField(uuid, "ip_address", ip);
+        if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "ip_address", ip);
+        return CompletableFuture.completedFuture(null);
     }
 // #endregion
 }

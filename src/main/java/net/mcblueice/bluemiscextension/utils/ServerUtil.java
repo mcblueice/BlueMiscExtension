@@ -1,0 +1,131 @@
+package net.mcblueice.bluemiscextension.utils;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.lang.management.ManagementFactory;
+import java.text.DecimalFormat;
+import com.sun.management.OperatingSystemMXBean;
+
+public class ServerUtil {
+
+    private final boolean isFolia;
+    private final DecimalFormat df = new DecimalFormat("0.00");
+
+    public ServerUtil() {
+        this.isFolia = checkFolia();
+    }
+
+    public boolean isFolia() { return isFolia; }
+    private boolean checkFolia() {
+        if (Bukkit.getVersion().toLowerCase().contains("folia")) return true;
+        try {
+            Class.forName("io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static String getMCVersion() {
+        String version = Bukkit.getBukkitVersion();
+        return version.split("-")[0];
+    }
+    public static boolean isNewAttributeKey() {
+        String[] parts = getMCVersion().split("\\.");
+        int major = Integer.parseInt(parts[1]);
+        int minor = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+        return (major > 21) || (major == 21 && minor >= 7);
+    }
+
+    public Component getServerStatus(CommandSender sender) {
+        TextComponent.Builder builder = Component.text();
+
+        builder.append(Component.text("§8§m---------§r§a伺服器狀態§8§m---------\n"));
+        builder.append(Component.text("§6核心類型: " + (isFolia ? "§bFolia" : "§ePaper/Spigot") + "\n"));
+
+        OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        int processors = osBean.getAvailableProcessors();
+        double systemLoad = osBean.getProcessCpuLoad() * 100;
+        if (systemLoad < 0) systemLoad = 0;
+
+        builder.append(Component.text("§6CPU數量: §e" + processors + "\n"));
+        builder.append(Component.text("§6CPU使用率: " + formatCpuColor(systemLoad) + df.format(systemLoad) + "%\n"));
+
+        long maxMem = Runtime.getRuntime().maxMemory() / 1024 / 1024;
+        long totalMem = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+        long freeMem = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+        long usedMem = totalMem - freeMem;
+
+        builder.append(Component.text("§6RAM使用率: " + formatMemoryColor(usedMem, maxMem) + usedMem + "MB §7/ §e" + maxMem + "MB\n"));
+
+        builder.append(Component.text("§8§m----------§r§5全域數據§8§m----------\n"));
+        
+        double[] tps = Bukkit.getTPS();
+        builder.append(Component.text("§6TPS: " + formatTps(tps[0]) + "§7, " + formatTps(tps[1]) + "§7, " + formatTps(tps[2]) + "\n"));
+
+        int totalChunks = 0;
+        int totalEntities = 0;
+
+        for (World world : Bukkit.getWorlds()) {
+            int wEntities = world.getEntityCount();
+            int wChunks = world.getLoadedChunks().length;
+            totalEntities += wEntities;
+            totalChunks += wChunks;
+
+            TextComponent.Builder worldLine = Component.text()
+                .append(Component.text("§7• §f" + world.getName() + ": "))
+                .append(Component.text("§e" + wChunks + " §7區塊, "))
+                .append(Component.text("§e" + wEntities + " §7生物"));
+
+            if (sender instanceof Player) {
+                Location spawn = world.getSpawnLocation();
+                String cmd = "/execute in " + world.getKey().toString() + " run tp " + spawn.getBlockX() + " " + spawn.getBlockY() + " " + spawn.getBlockZ();
+                
+                worldLine.hoverEvent(HoverEvent.showText(Component.text("§b點擊傳送到 " + world.getName() + " 重生點")))
+                         .clickEvent(ClickEvent.runCommand(cmd));
+            }
+            
+            builder.append(worldLine.append(Component.text("\n")));
+        }
+
+        builder.append(Component.text("§6總計: §e" + totalChunks + " §6區塊, §e" + totalEntities + " §6生物\n"));
+        builder.append(Component.text("§8§m--------------------------"));
+
+        return builder.build();
+    }
+
+
+    private String formatTps(double tps) {
+        double displayTps = Math.min(20.0, tps);
+        return formatTpsColor(displayTps) + df.format(displayTps);
+    }
+
+    private String formatTpsColor(double tps) {
+        if (tps >= 19.8) return "§a";
+        if (tps >= 18.0) return "§2";
+        if (tps >= 15.0) return "§e";
+        if (tps >= 10.0) return "§c";
+        return "§4";
+    }
+
+    private String formatCpuColor(double load) {
+        if (load < 50) return "§a";
+        if (load < 80) return "§e";
+        return "§c";
+    }
+
+    private String formatMemoryColor(long used, long max) {
+        double percent = (double) used / max;
+        if (percent < 0.50) return "§a";
+        if (percent < 0.80) return "§e";
+        return "§c";
+    }
+}
