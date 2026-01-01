@@ -85,7 +85,7 @@ public final class ArmorHideUtil {
             if (prefix.equals("CHAINMAIL")) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
         } else {
             displayComponent = Component.translatable(item.getType().getItemTranslationKey());
-            if (prefix.equals("CHAINMAIL")) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
+            if (prefix.equals("CHAINMAIL") && oldMeta.getEnchants().isEmpty()) displayComponent = displayComponent.color(NamedTextColor.YELLOW);
         }
         newMeta.displayName(displayComponent.decoration(TextDecoration.ITALIC, false));
 
