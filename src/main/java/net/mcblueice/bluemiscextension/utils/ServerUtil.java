@@ -55,6 +55,9 @@ public class ServerUtil {
     public static int getAbsorptionIndex() {
         return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 11) ? 17 : 15;
     }
+    public static boolean isNewParticle() {
+        return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 10);
+    }
 
     public Component getServerStatus(CommandSender sender) {
         TextComponent.Builder builder = Component.text();

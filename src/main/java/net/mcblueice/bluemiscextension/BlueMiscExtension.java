@@ -26,7 +26,7 @@ public class BlueMiscExtension extends JavaPlugin {
     private DatabaseUtil databaseUtil;
     private ServerUtil serverUtil;
     private ConfigManager lang;
-    public static final UUID CONSOLE_UUID = new UUID(0L, 0L);
+    public final UUID CONSOLE_UUID = new UUID(0L, 0L);
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
 
     public BlueMiscExtension() {

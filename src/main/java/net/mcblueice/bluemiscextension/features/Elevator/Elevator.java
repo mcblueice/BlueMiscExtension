@@ -17,6 +17,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.utils.ServerUtil;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 import net.mcblueice.bluemiscextension.features.Feature;
 
@@ -50,7 +51,11 @@ public class Elevator implements Listener, Feature {
             Location target = findElevatorTarget(player, matchedCombo, false);
             if (target != null) {
                 TaskScheduler.runTask(player, plugin, () -> {
-                    particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005);
+                    if (ServerUtil.isNewParticle()) {
+                        particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005, 1.0f);
+                    } else {
+                        particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005);
+                    }
                     try {
                         player.teleportAsync(target);
                     } catch (NoSuchMethodError e) {
@@ -85,7 +90,11 @@ public class Elevator implements Listener, Feature {
             Location target = findElevatorTarget(player, matchedCombo, true);
             if (target != null) {
                 TaskScheduler.runTask(player, plugin, () -> {
-                    particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005);
+                    if (ServerUtil.isNewParticle()) {
+                        particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005, 1.0f);
+                    } else {
+                        particeLocation.getWorld().spawnParticle(Particle.DRAGON_BREATH, particeLocation, 15, 0.2, 0.4, 0.2, 0.005);
+                    }
                     try {
                         player.teleportAsync(target);
                     } catch (NoSuchMethodError e) {

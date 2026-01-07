@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -56,7 +55,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         boolean stat = plugin.toggleDebugMode(player.getUniqueId());
                         sender.sendMessage(lang.get("Prefix") + lang.get(stat ? "DebugEnabled" : "DebugDisabled"));
                     } else {
-                        boolean stat = plugin.toggleDebugMode(new UUID(0L, 0L));
+                        boolean stat = plugin.toggleDebugMode(plugin.CONSOLE_UUID);
                         sender.sendMessage(lang.get("Prefix") + lang.get(stat ? "DebugEnabled" : "DebugDisabled"));
                     }
                     return true;
