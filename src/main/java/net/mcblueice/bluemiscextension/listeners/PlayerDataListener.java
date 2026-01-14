@@ -13,8 +13,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
-import net.mcblueice.bluemiscextension.features.FeatureManager;
-import net.mcblueice.bluemiscextension.features.BlueTools.BlueTools;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
 import net.mcblueice.bluemiscextension.utils.ServerUtil;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
@@ -22,7 +20,6 @@ import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 public class PlayerDataListener implements Listener {
     private final BlueMiscExtension plugin;
     private final DatabaseUtil databaseUtil;
-    private final FeatureManager featureManager;
     private final boolean debug;
 
     private final Map<UUID, TaskScheduler.RepeatingTaskHandler> playerTasks = new ConcurrentHashMap<>();
@@ -32,7 +29,6 @@ public class PlayerDataListener implements Listener {
     public PlayerDataListener(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.databaseUtil = plugin.getDatabaseUtil();
-        this.featureManager = plugin.getFeatureManager();
         this.debug = plugin.getConfig().getBoolean("Database.debug", false);
     }
 
@@ -71,10 +67,6 @@ public class PlayerDataListener implements Listener {
                             Double tps = ServerUtil.isFolia ? ServerUtil.getRegionTPS(player.getLocation()) : ServerUtil.getTPS();
                             if (debug) plugin.sendDebug("更新cache中的TPS數據 for 玩家: " + player.getName() + "TPS: " + tps);
                             playerTPSCache.put(uuid, tps);
-
-                            BlueTools blueTools = featureManager.getFeature(BlueTools.class);
-                            if (blueTools != null && blueTools.getArmorSystem() != null) blueTools.getArmorSystem().tickPlayer(player);
-
                         }, 20L, 20L));
 
     }

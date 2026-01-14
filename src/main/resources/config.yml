@@ -42,6 +42,3 @@ Features:
   PlaceholderAPI:
     enable: true
     debug: false
-  BlueTools:
-    enable: true
-    debug: false
