@@ -5,41 +5,50 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.FeatureManager;
+import net.mcblueice.bluemiscextension.features.BlueTools.BlueTools;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
+import net.mcblueice.bluemiscextension.utils.ServerUtil;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 
 public class PlayerDataListener implements Listener {
     private final BlueMiscExtension plugin;
+    private final DatabaseUtil databaseUtil;
+    private final FeatureManager featureManager;
+    private final boolean debug;
+
+    private final Map<UUID, TaskScheduler.RepeatingTaskHandler> playerTasks = new ConcurrentHashMap<>();
     private final Map<UUID, String[]> loginData = new ConcurrentHashMap<>();
+    public static final Map<UUID, Double> playerTPSCache = new ConcurrentHashMap<>();
 
     public PlayerDataListener(BlueMiscExtension plugin) {
         this.plugin = plugin;
+        this.databaseUtil = plugin.getDatabaseUtil();
+        this.featureManager = plugin.getFeatureManager();
+        this.debug = plugin.getConfig().getBoolean("Database.debug", false);
     }
 
     @EventHandler
-    public void onPlayerLogin(PlayerLoginEvent event) {
-        String playerName = event.getPlayer().getName();
+    public void onPlayerLogin(AsyncPlayerPreLoginEvent event) {
+        String playerName = event.getName();
+        UUID playerUUID = event.getUniqueId();
         String hostname = event.getHostname();
         String ip = event.getAddress().getHostAddress();
         
-        loginData.put(event.getPlayer().getUniqueId(), new String[]{hostname, ip});
-        Bukkit.getConsoleSender().sendMessage("§7[§b登入§7]§e玩家 §b" + playerName + " §e從 §a" + hostname + " §e(IP: §9" + ip + "§e) 登入伺服器");
+        loginData.put(playerUUID, new String[]{hostname, ip});
+        plugin.sendMessage("§e玩家 §b" + playerName + " §e從 §a" + hostname + " §e(IP: §9" + ip + "§e) 登入伺服器");
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        DatabaseUtil databaseUtil = plugin.getDatabaseUtil();
-        if (databaseUtil == null) return;
-
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
@@ -52,10 +61,22 @@ public class PlayerDataListener implements Listener {
                     databaseUtil.setIpAddress(uuid, (data[1] != null) ? data[1] : "UnknownIp");
                 });
             } catch (SQLException e) {
-                plugin.getLogger().severe("同步玩家資料至資料庫時發生錯誤：" + e.getMessage());
-                plugin.sendDebug("同步玩家資料至資料庫時發生錯誤：" + e.getMessage());
+                plugin.getLogger().warning("同步玩家資料至資料庫時發生錯誤：" + e.getMessage());
+                if (debug) plugin.sendDebug("同步玩家資料至資料庫時發生錯誤：" + e.getMessage());
             }
         });
+
+        playerTasks.put(uuid,
+                        TaskScheduler.runPlayerRepeatingTask(player, plugin, () -> {
+                            Double tps = ServerUtil.isFolia ? ServerUtil.getRegionTPS(player.getLocation()) : ServerUtil.getTPS();
+                            if (debug) plugin.sendDebug("更新cache中的TPS數據 for 玩家: " + player.getName() + "TPS: " + tps);
+                            playerTPSCache.put(uuid, tps);
+
+                            BlueTools blueTools = featureManager.getFeature(BlueTools.class);
+                            if (blueTools != null && blueTools.getArmorSystem() != null) blueTools.getArmorSystem().tickPlayer(player);
+
+                        }, 20L, 20L));
+
     }
 
     @EventHandler
@@ -64,7 +85,12 @@ public class PlayerDataListener implements Listener {
         if (databaseUtil == null) return;
 
         Player player = event.getPlayer();
-        databaseUtil.savePlayerData(player.getUniqueId(), true);
-        loginData.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        databaseUtil.savePlayerDataAsync(uuid, true);
+        loginData.remove(uuid);
+
+        TaskScheduler.RepeatingTaskHandler task = playerTasks.remove(uuid);
+        if (task != null) task.cancel();
+        playerTPSCache.remove(uuid);
     }
 }

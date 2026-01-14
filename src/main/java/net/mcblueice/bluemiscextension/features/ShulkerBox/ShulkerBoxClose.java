@@ -19,13 +19,18 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 
 public class ShulkerBoxClose implements Listener {
+    private final BlueMiscExtension plugin;
     private final ShulkerBox manager;
+    private final boolean debug;
 
     public ShulkerBoxClose(ShulkerBox manager) {
+        this.plugin = BlueMiscExtension.getInstance();
         this.manager = manager;
+        this.debug = plugin.getConfig().getBoolean("Features.ShulkerBox.debug", false);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -50,7 +55,7 @@ public class ShulkerBoxClose implements Listener {
         }
         if (!affectsTop) return;
 
-        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+        TaskScheduler.runTask(player, plugin, () -> {
             saveInventoryToItem(player, top, shulkerBoxUuid);
         });
     }
@@ -77,7 +82,7 @@ public class ShulkerBoxClose implements Listener {
         }
         if (!affectsTop) return;
 
-        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+        TaskScheduler.runTask(player, plugin, () -> {
             saveInventoryToItem(player, top, shulkerUuid);
         });
     }
@@ -99,7 +104,7 @@ public class ShulkerBoxClose implements Listener {
         
         if (shulkerUuid == null || closedInv == null) return;
         if (!(closedInv.getHolder() instanceof Player) || !closedInv.getHolder().equals(player)) return;
-        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+        TaskScheduler.runTask(player, plugin, () -> {
             saveInventoryToItem(player, closedInv, shulkerUuid);
         });
         
@@ -108,7 +113,7 @@ public class ShulkerBoxClose implements Listener {
     }
 
     private void saveInventoryToItem(Player player, Inventory inv, UUID shulkerUuid) {
-        manager.getPlugin().sendDebug("§e開始保存界伏盒內容: " + shulkerUuid);
+        if (debug) plugin.sendDebug("§e開始保存界伏盒內容: " + shulkerUuid);
         
         if (player == null || inv == null || shulkerUuid == null) return;
 
@@ -147,6 +152,6 @@ public class ShulkerBoxClose implements Listener {
         shulkerBoxItem.setItemMeta(blockMeta);
 
         player.updateInventory();
-        manager.getPlugin().sendDebug("§a成功保存界伏盒內容: " + shulkerUuid);
+        if (debug) plugin.sendDebug("§a成功保存界伏盒內容: " + shulkerUuid);
     }
 }

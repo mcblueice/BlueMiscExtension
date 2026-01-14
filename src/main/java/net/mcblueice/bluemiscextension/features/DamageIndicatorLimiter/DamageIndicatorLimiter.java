@@ -30,6 +30,8 @@ public class DamageIndicatorLimiter implements Feature {
 
             @Override
             public void onPacketSending(PacketEvent event) {
+                BlueMiscExtension plugin = DamageIndicatorLimiter.this.plugin;
+                boolean debug = plugin.getConfig().getBoolean("Features.DamageIndicatorLimiter.debug", false);
                 PacketContainer packet = event.getPacket().deepClone();
                 WrappedParticle<?> wrappedParticle = packet.getNewParticles().readSafely(0);
                 Particle particle = wrappedParticle.getParticle();
@@ -37,7 +39,7 @@ public class DamageIndicatorLimiter implements Feature {
                 if (particle == Particle.DAMAGE_INDICATOR && count > maxParticles) {
                     packet.getIntegers().writeSafely(0, maxParticles);
                     event.setPacket(packet);
-                    DamageIndicatorLimiter.this.plugin.sendDebug("§e已將 §b" + event.getPlayer().getName() + " §e的 §6" + particle.name() + " §e粒子數量由 §6" + count + " §e調整為 §6" + maxParticles);
+                    if (debug) plugin.sendDebug("§e已將 §b" + event.getPlayer().getName() + " §e的 §6" + particle.name() + " §e粒子數量由 §6" + count + " §e調整為 §6" + maxParticles);
                 }
             }
         });

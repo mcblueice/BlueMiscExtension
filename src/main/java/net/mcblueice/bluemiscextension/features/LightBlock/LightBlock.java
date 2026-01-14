@@ -34,6 +34,11 @@ public class LightBlock implements Listener, Feature {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
+    @Override
+    public void unregister() {
+        HandlerList.unregisterAll(this);
+    }
+
     @EventHandler
     public void displayLightBlock(PlayerMoveEvent event) {
         Player player = event.getPlayer();
@@ -81,10 +86,5 @@ public class LightBlock implements Listener, Feature {
             Location particleLocation = blockLoc;
             if (block.getType() == Material.LIGHT) block.getWorld().spawnParticle(Particle.BLOCK_MARKER, particleLocation, 1, block.getBlockData());
         }
-    }
-
-    @Override
-    public void unregister() {
-        HandlerList.unregisterAll(this);
     }
 }

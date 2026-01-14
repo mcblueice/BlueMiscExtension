@@ -1,0 +1,12 @@
+aliases:
+  armorhide: "bluemiscextension armorhide"
+  workbench:
+    workbench: "bluemiscextension workbench workbench"
+    craft: "bluemiscextension workbench workbench"
+    anvil: "bluemiscextension workbench anvil"
+    grindstone: "bluemiscextension workbench grindstone"
+    smithing: "bluemiscextension workbench smithing"
+    cartography: "bluemiscextension workbench cartography"
+    loom: "bluemiscextension workbench loom"
+    enderchest: "bluemiscextension workbench enderchest"
+    ec: "bluemiscextension workbench enderchest"

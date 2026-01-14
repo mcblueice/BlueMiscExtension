@@ -5,9 +5,10 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffectType;
 
 import com.comphenix.protocol.PacketType;
@@ -31,29 +32,49 @@ import net.mcblueice.bluemiscextension.features.Feature;
 public class ArmorHide implements Feature {
 	private final BlueMiscExtension plugin;
     private final ProtocolManager protocolManager;
+    private final PluginManager pluginManager;
     private final DatabaseUtil databaseUtil;
+    private SetSlotListener setSlotListener;
+    private WindowItemsListener windowItemsListener;
+    private EntityEquipmentListener entityEquipmentListener;
+    private GameModeListener gameModeListener;
+    private InventoryClickListener inventoryClickListener;
+    private PotionEffectListener potionEffectListener;
+    
 
     public ArmorHide(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.protocolManager = ProtocolLibrary.getProtocolManager();
+        this.pluginManager = Bukkit.getPluginManager();
         this.databaseUtil = plugin.getDatabaseUtil();
     }
 
 	@Override
 	public void register() {
-		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+        this.setSlotListener = new SetSlotListener(plugin, this);
+        this.windowItemsListener = new WindowItemsListener(plugin, this);
+        this.entityEquipmentListener = new EntityEquipmentListener(plugin, this);
+        this.gameModeListener = new GameModeListener(plugin, this);
+        this.inventoryClickListener = new InventoryClickListener(plugin, this);
+        this.potionEffectListener = new PotionEffectListener(plugin, this);
 
-		manager.addPacketListener(new SetSlotListener(plugin, this));
-        manager.addPacketListener(new WindowItemsListener(plugin, this));
-        manager.addPacketListener(new EntityEquipmentListener(plugin, this));
-        
-        Bukkit.getPluginManager().registerEvents(new GameModeListener(plugin, this), plugin);
-        Bukkit.getPluginManager().registerEvents(new InventoryClickListener(plugin, this), plugin);
-        Bukkit.getPluginManager().registerEvents(new PotionEffectListener(plugin, this), plugin);
+		protocolManager.addPacketListener(setSlotListener);
+        protocolManager.addPacketListener(windowItemsListener);
+        protocolManager.addPacketListener(entityEquipmentListener);
+        pluginManager.registerEvents(gameModeListener, plugin);
+        pluginManager.registerEvents(inventoryClickListener, plugin);
+        pluginManager.registerEvents(potionEffectListener, plugin);
 	}
 
     @Override
-    public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
+    public void unregister() { 
+        protocolManager.removePacketListener(setSlotListener);
+        protocolManager.removePacketListener(windowItemsListener);
+        protocolManager.removePacketListener(entityEquipmentListener);
+        HandlerList.unregisterAll(gameModeListener);
+        HandlerList.unregisterAll(inventoryClickListener);
+        HandlerList.unregisterAll(potionEffectListener);
+    }
 
     public boolean isArmorHidden(Player player) {
         if (databaseUtil.getArmorHiddenState(player.getUniqueId())) return true;

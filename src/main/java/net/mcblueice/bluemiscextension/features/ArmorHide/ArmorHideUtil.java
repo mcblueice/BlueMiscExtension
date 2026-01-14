@@ -199,7 +199,7 @@ public final class ArmorHideUtil {
                 double amount = level * 0.15;
                 loreComponent.add(Component.text()
                         .append(Component.text("+" + df.format(amount) + " "))
-                        .append(Component.translatable(getAttributeKey(Attribute.PLAYER_SNEAKING_SPEED)))
+                        .append(Component.translatable(getAttributeKey(Attribute.SNEAKING_SPEED)))
                         .color(NamedTextColor.BLUE)
                         .decoration(TextDecoration.ITALIC, false)
                         .build());
@@ -210,7 +210,7 @@ public final class ArmorHideUtil {
                 double amount = level * 0.33;
                 loreComponent.add(Component.text()
                         .append(Component.text("+" + df.format(amount) + " "))
-                        .append(Component.translatable(getAttributeKey(Attribute.GENERIC_WATER_MOVEMENT_EFFICIENCY)))
+                        .append(Component.translatable(getAttributeKey(Attribute.WATER_MOVEMENT_EFFICIENCY)))
                         .color(NamedTextColor.BLUE)
                         .decoration(TextDecoration.ITALIC, false)
                         .build());
@@ -221,7 +221,7 @@ public final class ArmorHideUtil {
                 double amount = level * 1.0;
                 loreComponent.add(Component.text()
                         .append(Component.text("+" + df.format(amount) + " "))
-                        .append(Component.translatable(getAttributeKey(Attribute.GENERIC_OXYGEN_BONUS)))
+                        .append(Component.translatable(getAttributeKey(Attribute.OXYGEN_BONUS)))
                         .color(NamedTextColor.BLUE)
                         .decoration(TextDecoration.ITALIC, false)
                         .build());
@@ -231,7 +231,7 @@ public final class ArmorHideUtil {
             if (key.equals("aqua_affinity") && slot == EquipmentSlot.HEAD) {
                 loreComponent.add(Component.text()
                         .append(Component.text("+400% "))
-                        .append(Component.translatable(getAttributeKey(Attribute.PLAYER_SUBMERGED_MINING_SPEED)))
+                        .append(Component.translatable(getAttributeKey(Attribute.SUBMERGED_MINING_SPEED)))
                         .color(NamedTextColor.BLUE)
                         .decoration(TextDecoration.ITALIC, false)
                         .build());
@@ -270,7 +270,7 @@ public final class ArmorHideUtil {
                 displaySuffix = "%";
                 break;
             default:
-                if (attribute == Attribute.GENERIC_KNOCKBACK_RESISTANCE) {
+                if (attribute == Attribute.KNOCKBACK_RESISTANCE) {
                     displayValue = amount * 10;
                 } else {
                     displayValue = amount;

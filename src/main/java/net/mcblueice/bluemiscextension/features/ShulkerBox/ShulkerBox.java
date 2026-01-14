@@ -40,8 +40,6 @@ public class ShulkerBox implements Feature {
         if (lockListener != null) HandlerList.unregisterAll(lockListener);
     }
 
-    public BlueMiscExtension getPlugin() { return plugin; }
-
     public Map<UUID, Long> getOpenCooldowns() { return openCooldowns; }
 
     public Map<UUID, UUID> getOpenedShulkerBoxes() { return openedShulkerBoxes; }

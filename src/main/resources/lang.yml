@@ -1,4 +1,6 @@
-Prefix: "&7&l[&e&l雜項&7&l]&r"
+Prefix: 
+  Default: "&7&l[&e&l雜項&7&l]&r"
+  Armor: "&7&l[&5&l盔甲&7&l]&r"
 
 # 通用訊息
 NoPermission: "&c你沒有權限使用此指令!"
@@ -34,6 +36,13 @@ VirtualWorkbench:
   NotEnabled: "&c虛擬工作站功能未啟用!"
   UnknownStation: "&c未知的工作站類型: %{1}"
   OpenedOther: "&a已為 %{1} 打開 %{2}"
+  Title:
+    WorkbenchTitle: "虛擬工作台"
+    AnvilTitle: "虛擬鐵砧"
+    GrindstoneTitle: "虛擬砂輪"
+    SmithingTitle: "虛擬鍛造台"
+    LoomTitle: "虛擬紡織機"
+    CartographyTitle: "虛擬製圖台"
 
 # 裝備隱形
 ArmorHideFeature:
@@ -42,3 +51,68 @@ ArmorHideFeature:
   ToggleOff: "&6裝備隱形功能已&c關閉"
   ToggleOnOther: "&6已為 %{1} 啟用裝備隱形功能"
   ToggleOffOther: "&6已為 %{1} 關閉裝備隱形功能"
+
+# 動力裝甲系統
+ArmorSystem:
+  GUI:
+    Settings:
+      Title: "&8動力裝甲功能設定"
+      Lore:
+        Toggle: "&7點擊切換狀態"
+        StatusPrefix: "&f狀態: "
+      Status:
+        Enabled: "&a[已啟用]"
+        Disabled: "&c[已禁用]"
+      BossBar:
+        Name: "&b顯示能量條"
+        Lore: "&7開啟後將顯示能量消耗監控條"
+      NextPage:
+        Name: "&b數值調整 (下一頁)"
+        Lore: "&7點擊調整飛行速度、跳躍高度等數值"
+    Attribute:
+      Title: "&3高級套裝數值調整"
+      Speed:
+        Name: "移動速度"
+      Flight:
+        Name: "飛行速度"
+      Jump:
+        Name: "跳躍高度"
+      Lore:
+        CurrentValue: "&7當前數值: &f"
+        DefaultValue: "&7預設數值: &8"
+        Range: "&7可調範圍: &b"
+        Locked: "&c[已鎖定] &7當前裝備不支援調整此屬性"
+      Button:
+        Unavailable: "&7[不可用]"
+        Increase: "&a數值增加 (+)"
+        Decrease: "&c數值減少 (-)"
+        Lore:
+          ClickIncrease: "&e[點擊] &a+0.01"
+          ShiftClickIncrease: "&e[Shift+點擊] &a+0.05"
+          ClickDecrease: "&e[點擊] &c-0.01"
+          ShiftClickDecrease: "&e[Shift+點擊] &c-0.05"
+    Common:
+      Back: "&c返回上一頁"
+  Message:
+    LockedAttribute: "&c當前裝備不支援調整此屬性"
+    EnabledFeature: "&a已啟用 &f%{1} &a功能"
+    LowEnergy: "&c能量不足 所有功能已關閉!"
+  BossBar:
+    Format: "&b能量: &f%{1} &7| &b耗能: &f%{2}/s &7| &b續航: &f%{3}"
+    Time:
+      Seconds: "%{1}秒"
+      Minutes: "%{1}分 %{2}秒"
+      Hours: "%{1}時 %{2}分"
+      Days: "%{1}天 %{2}時"
+      Months: "%{1}月 %{2}天"
+      Infinity: "∞"
+  Effects:
+    flight: "飛行"
+    night_vision: "夜視"
+    water_breathing: "水下呼吸"
+    fire_resistance: "防火"
+    speed: "速度"
+    jump: "跳躍"
+    step_assist: "自動爬坡"
+    block_reach_increase: "距離延伸"
+    mining_speed: "挖掘加速"

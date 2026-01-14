@@ -20,13 +20,18 @@ import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import net.kyori.adventure.text.Component;
+import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 
 public class ShulkerBoxOpen implements Listener {
+    private final BlueMiscExtension plugin;
     private final ShulkerBox manager;
+    private final boolean debug;
 
     public ShulkerBoxOpen(ShulkerBox manager) {
+        this.plugin = BlueMiscExtension.getInstance();
         this.manager = manager;
+        this.debug = plugin.getConfig().getBoolean("Features.ShulkerBox.debug", false);
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -81,7 +86,7 @@ public class ShulkerBoxOpen implements Listener {
         if (item.getAmount() > 1) return false;
         UUID uuid = player.getUniqueId();
 
-        long openCooldown = manager.getPlugin().getConfig().getLong("Features.ShulkerBox.cooldown", 1000L);
+        long openCooldown = plugin.getConfig().getLong("Features.ShulkerBox.cooldown", 1000L);
         if (manager.getOpenCooldowns().containsKey(uuid) && (System.currentTimeMillis() - manager.getOpenCooldowns().get(uuid) < openCooldown)) {
             long remain = (openCooldown - System.currentTimeMillis() + manager.getOpenCooldowns().get(uuid)) / 1000L + 1L;
             player.sendMessage("§7§l[§e§l雜項§7§l]§r§e界伏盒開啟冷卻中 剩餘§6 " + remain + " §e秒");
@@ -95,10 +100,10 @@ public class ShulkerBoxOpen implements Listener {
         if (!(itemBlockState instanceof InventoryHolder)) return false;
         Inventory itemInv = ((InventoryHolder) itemBlockState).getInventory();
 
-        TaskScheduler.runTask(player, manager.getPlugin(), () -> {
+        TaskScheduler.runTask(player, plugin, () -> {
             Component title = Component.text("界伏盒");
             if (itemMeta != null && itemMeta.displayName() != null) title = itemMeta.displayName();
-            Inventory cloneInv = manager.getPlugin().getServer().createInventory( player, InventoryType.SHULKER_BOX, title );
+            Inventory cloneInv = plugin.getServer().createInventory( player, InventoryType.SHULKER_BOX, title );
             cloneInv.setContents(itemInv.getContents());
 
             UUID shulkerBoxUuid = ShulkerBoxUtil.getUUID(item);
@@ -106,7 +111,7 @@ public class ShulkerBoxOpen implements Listener {
             player.closeInventory();
             player.openInventory(cloneInv);
 
-            manager.getPlugin().sendDebug("§e已為 §b" + player.getName() + " §e開啟界伏盒: §a" + shulkerBoxUuid);
+            if (debug) plugin.sendDebug("§e已為 §b" + player.getName() + " §e開啟界伏盒: §a" + shulkerBoxUuid);
             manager.getOpenedShulkerBoxes().put(uuid, shulkerBoxUuid);
             player.playSound(player.getLocation(), Sound.BLOCK_SHULKER_BOX_OPEN, 1f, 1f);
         });

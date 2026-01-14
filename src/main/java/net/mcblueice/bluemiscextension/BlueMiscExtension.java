@@ -14,8 +14,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
-import net.mcblueice.bluemiscextension.utils.ServerUtil;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
 import net.mcblueice.bluemiscextension.commands.Commands;
 import net.mcblueice.bluemiscextension.features.FeatureManager;
 
@@ -24,7 +22,6 @@ public class BlueMiscExtension extends JavaPlugin {
     private Logger logger;
     private FeatureManager featureManager;
     private DatabaseUtil databaseUtil;
-    private ServerUtil serverUtil;
     private ConfigManager lang;
     public final UUID CONSOLE_UUID = new UUID(0L, 0L);
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
@@ -41,8 +38,6 @@ public class BlueMiscExtension extends JavaPlugin {
         logger = getLogger();
         saveDefaultConfig();
         this.lang = new ConfigManager(this);
-
-        serverUtil = new ServerUtil();
 
         databaseUtil = new DatabaseUtil(this);
         try {
@@ -71,7 +66,7 @@ public class BlueMiscExtension extends JavaPlugin {
         if (featureManager != null) featureManager.unloadAll();
 
         if (databaseUtil != null) {
-            Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + "§eDEBUG: §7" + "伺服器關閉 開始保存玩家資料");
+            sendMessage(lang.get("Prefix") + "伺服器關閉 開始保存玩家資料");
             HashSet<UUID> playerUUIDs = new HashSet<>();
             for (Player player : getServer().getOnlinePlayers()) {
                 playerUUIDs.add(player.getUniqueId());
@@ -98,23 +93,30 @@ public class BlueMiscExtension extends JavaPlugin {
         // console
         if (debugModePlayers.contains(CONSOLE_UUID)) sendMessage("§eDEBUG: §7" + message);
         // player
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (debugModePlayers.contains(player.getUniqueId())) sendMessage(player, "§eDEBUG: §7" + message);
+        for (UUID uuid : debugModePlayers) {
+            if (uuid.equals(CONSOLE_UUID)) continue;
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) sendMessage(player, "§eDEBUG: §7" + message);
         }
     }
 
     public void sendMessage(String message) {
+        sendMessage("Prefix.Default", message);
+    }
+    public void sendMessage(String prefix, String message) {
         if (message == null) return;
-        Bukkit.getConsoleSender().sendMessage(lang.get("Prefix") + message);
+        Bukkit.getConsoleSender().sendMessage(lang.get(prefix) + message);
     }
 
     public void sendMessage(Player player, String message) {
+        sendMessage(player, "Default", message);
+    }
+    public void sendMessage(Player player, String prefix, String message) {
         if (player == null || message == null) return;
-        TaskScheduler.runTask(player, this, () -> player.sendMessage(lang.get("Prefix") + message));
+        player.sendMessage(lang.get("Prefix." + prefix) + message);
     }
 
     public DatabaseUtil getDatabaseUtil() { return databaseUtil; }
     public ConfigManager getLanguageManager() { return lang; }
     public FeatureManager getFeatureManager() { return featureManager; }
-    public ServerUtil getServerUtil() { return serverUtil; }
 }

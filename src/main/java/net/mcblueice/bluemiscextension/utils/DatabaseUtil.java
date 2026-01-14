@@ -28,6 +28,7 @@ import net.mcblueice.bluemiscextension.BlueMiscExtension;
 
 public class DatabaseUtil {
     private final BlueMiscExtension plugin;
+    private final boolean debug;
     private HikariDataSource dataSource;
     private String dbType = "sqlite";
     private static final int MaxRetry = 39;
@@ -40,6 +41,7 @@ public class DatabaseUtil {
 
     public DatabaseUtil(BlueMiscExtension plugin) {
         this.plugin = plugin;
+        this.debug = plugin.getConfig().getBoolean("Database.debug", false);
     }
 
     // region 初始化與關閉
@@ -186,7 +188,7 @@ public class DatabaseUtil {
         if (dataSource == null || dataSource.isClosed()) return;
         if (dataLoadedPlayers.isEmpty()) return;
 
-        plugin.sendDebug("執行資料庫自動保存任務...");
+        if (debug) plugin.sendDebug("執行資料庫自動保存任務...");
         // new一個新的Set避免被修改
         savePlayerData(new HashSet<>(dataLoadedPlayers), false);
     }
@@ -197,7 +199,7 @@ public class DatabaseUtil {
         try (Connection connection = dataSource.getConnection()) {
             savePlayerDataInternal(connection, uuid, removeCacheAndUnlock);
         } catch (SQLException e) {
-            plugin.getLogger().warning("Error saving player " + uuid + ": " + e.getMessage());
+            plugin.getLogger().severe("Error saving player " + uuid + ": " + e.getMessage());
         }
     }
 
@@ -207,7 +209,7 @@ public class DatabaseUtil {
 
         try (Connection connection = dataSource.getConnection()) {
             for (UUID uuid : uuids) {
-                plugin.sendDebug("§7儲存玩家 " + uuid + " 的資料...");
+                if (debug) plugin.sendDebug("§7儲存玩家 " + uuid + " 的資料...");
                 savePlayerDataInternal(connection, uuid, removeCacheAndUnlock);
             }
         } catch (SQLException e) {
@@ -234,7 +236,7 @@ public class DatabaseUtil {
 
             executeUpdate(connection, uuid, updates);
 
-            if (removeCacheAndUnlock) plugin.sendDebug("資料已儲存並解鎖: " + uuid);
+            if (removeCacheAndUnlock && debug) plugin.sendDebug("資料已儲存並解鎖: " + uuid);
         } catch (SQLException e) {
             throw e;
         } finally {
@@ -322,12 +324,12 @@ public class DatabaseUtil {
                             }
 
                             dataLoadedPlayers.add(uuid);
-                            plugin.sendDebug("資料已載入並鎖定: " + uuid);
+                            if (debug) plugin.sendDebug("資料已載入並鎖定: " + uuid);
 
                             future.complete(null);
                             return;
                         } else {
-                            plugin.sendDebug("資料尚未儲存: " + uuid + "，正在重試... (" + (retryCount+1) + ")");
+                            if (debug) plugin.sendDebug("資料尚未儲存: " + uuid + "，正在重試... (" + (retryCount+1) + ")");
                             retryCount++;
                             try {
                                 Thread.sleep(RetryDelay * 50);

@@ -11,7 +11,7 @@ public final class TaskScheduler {
     public static final boolean isFolia = checkFolia();
 
     private TaskScheduler() {
-        throw new AssertionError("Utility class should not be instantiated");
+        throw new IllegalStateException("Utility class should not be instantiated");
     }
 
     private static boolean checkFolia() {

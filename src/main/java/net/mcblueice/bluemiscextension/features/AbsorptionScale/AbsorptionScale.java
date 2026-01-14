@@ -19,6 +19,7 @@ import com.comphenix.protocol.wrappers.WrappedDataValue;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.Feature;
+import net.mcblueice.bluemiscextension.features.FeatureManager;
 import net.mcblueice.bluemiscextension.utils.ServerUtil;
 
 public class AbsorptionScale implements Listener, Feature {
@@ -40,6 +41,8 @@ public class AbsorptionScale implements Listener, Feature {
 
 			@Override
 			public void onPacketSending(PacketEvent event) {
+				BlueMiscExtension plugin = AbsorptionScale.this.plugin;
+				boolean debug = plugin.getConfig().getBoolean("Features.AbsorptionScale.debug", false);
 				PacketContainer packet = event.getPacket().deepClone();
 				Player viewer = event.getPlayer();
 				Integer entityId = packet.getIntegers().readSafely(0);
@@ -62,7 +65,7 @@ public class AbsorptionScale implements Listener, Feature {
 				float absorptionValue = ((Number) packetData.getValue()).floatValue();
 
 				if (absorptionValue <= 0F) {
-					AbsorptionScale.this.plugin.sendDebug("§e已重置 §b" + player.getName() + " §e的吸收血量縮放資料");
+					if (debug) plugin.sendDebug("§e已重置 §b" + player.getName() + " §e的吸收血量縮放資料");
 					peakAbsorption.remove(uuid);
 					lastDisplayed.remove(uuid);
 					return;
@@ -71,7 +74,7 @@ public class AbsorptionScale implements Listener, Feature {
 				float peak = peakAbsorption.getOrDefault(uuid, absorptionValue);
 				if (absorptionValue > peak) {
 					peak = absorptionValue;
-					AbsorptionScale.this.plugin.sendDebug("§e更新 §b" + player.getName() + " §e最高吸收血量至 §6" + peak);
+					if (debug) plugin.sendDebug("§e更新 §b" + player.getName() + " §e最高吸收血量至 §6" + peak);
 				}
 				peakAbsorption.putIfAbsent(uuid, peak);
 
@@ -91,21 +94,22 @@ public class AbsorptionScale implements Listener, Feature {
 				packetData.setValue(displayValue);
 				packet.getDataValueCollectionModifier().writeSafely(0, dataList);
 				event.setPacket(packet);
-				AbsorptionScale.this.plugin.sendDebug("§e更新 §b" + player.getName() + " §e吸收血量至 §6" + displayValue + "§7(§6" + absorptionValue + "/" + peak + "§7)");
+				if (debug) plugin.sendDebug("§e更新 §b" + player.getName() + " §e吸收血量至 §6" + displayValue + "§7(§6" + absorptionValue + "/" + peak + "§7)");
 			}
         });
 	}
 
 	public static Float getMaxAbsorption(UUID uuid) {
-		BlueMiscExtension plugin = BlueMiscExtension.getInstance();
-		AbsorptionScale absorptionScale = plugin.getFeatureManager().getFeature(AbsorptionScale.class);
+		FeatureManager featureManager = BlueMiscExtension.getInstance().getFeatureManager();
+		AbsorptionScale absorptionScale = featureManager.getFeature(AbsorptionScale.class);
 		if (absorptionScale == null) return 0F;
 		Float maxAbsorption = absorptionScale.peakAbsorption.get(uuid);
 		return maxAbsorption != null ? maxAbsorption : 0F;
 	}
 	public static Float getAbsorption(UUID uuid) {
 		BlueMiscExtension plugin = BlueMiscExtension.getInstance();
-		AbsorptionScale absorptionScale = plugin.getFeatureManager().getFeature(AbsorptionScale.class);
+		FeatureManager featureManager = BlueMiscExtension.getInstance().getFeatureManager();
+		AbsorptionScale absorptionScale = featureManager.getFeature(AbsorptionScale.class);
 		if (absorptionScale == null) return 0F;
 		Player player = plugin.getServer().getPlayer(uuid);
 		Float absorption = (float) player.getAbsorptionAmount();

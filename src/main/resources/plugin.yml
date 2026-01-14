@@ -1,7 +1,7 @@
 name: BlueMiscExtension
 version: '${project.version}'
 main: net.mcblueice.bluemiscextension.BlueMiscExtension
-api-version: 1.21
+api-version: 1.21.11
 softdepend:
   - ProtocolLib
   - PlaceholderAPI

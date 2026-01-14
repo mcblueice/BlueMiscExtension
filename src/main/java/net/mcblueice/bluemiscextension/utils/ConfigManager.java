@@ -8,6 +8,9 @@ import java.io.File;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+
 public class ConfigManager {
     private final JavaPlugin plugin;
     private Map<String, Object> langData = new HashMap<>();
@@ -56,5 +59,10 @@ public class ConfigManager {
         }
         matcher.appendTail(result);
         return result.toString();
+    }
+
+    public Component getComponent(String key) {
+        String text = get(key);
+        return LegacyComponentSerializer.legacySection().deserialize(text);
     }
 }

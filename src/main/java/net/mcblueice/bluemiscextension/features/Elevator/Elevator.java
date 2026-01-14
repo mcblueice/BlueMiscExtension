@@ -24,14 +24,21 @@ import net.mcblueice.bluemiscextension.features.Feature;
 public class Elevator implements Listener, Feature {
 
     private final BlueMiscExtension plugin;
+    private final boolean debug;
 
     public Elevator(BlueMiscExtension plugin) {
         this.plugin = plugin;
+        this.debug = plugin.getConfig().getBoolean("Features.Elevator.debug", false);
     }
 
     @Override
     public void register() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
+
+    @Override
+    public void unregister() {
+        HandlerList.unregisterAll(this);
     }
 
     @EventHandler
@@ -44,7 +51,7 @@ public class Elevator implements Listener, Feature {
 
         Block[] belowBlocks = getBelowBlocks(playerLoc);
 
-        plugin.sendDebug("蹲下 - 下方1格:" + belowBlocks[0].getType().name() + ", 下方2格:" + belowBlocks[1].getType().name() + ", 下方3格:" + belowBlocks[2].getType().name());
+        if (debug) plugin.sendDebug("蹲下 - 下方1格:" + belowBlocks[0].getType().name() + ", 下方2格:" + belowBlocks[1].getType().name() + ", 下方3格:" + belowBlocks[2].getType().name());
 
         String matchedCombo = isElevator(belowBlocks);
         if (matchedCombo != null) {
@@ -62,7 +69,7 @@ public class Elevator implements Listener, Feature {
                         player.teleport(target);
                     }
                     player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1.0f, 1.0f));
-                    plugin.sendDebug("電梯下降: " + player.getName() + " 到 Y=" + target.getBlockY());
+                    if (debug) plugin.sendDebug("電梯下降: " + player.getName() + " 到 Y=" + target.getBlockY());
                 });
             }
         }
@@ -83,7 +90,7 @@ public class Elevator implements Listener, Feature {
 
         Block[] belowBlocks = getBelowBlocks(playerLoc);
 
-        plugin.sendDebug("跳躍 -  下方1格:" + belowBlocks[0].getType().name() + ", 下方2格:" + belowBlocks[1].getType().name() + ", 下方3格:" + belowBlocks[2].getType().name());
+        if (debug) plugin.sendDebug("跳躍 -  下方1格:" + belowBlocks[0].getType().name() + ", 下方2格:" + belowBlocks[1].getType().name() + ", 下方3格:" + belowBlocks[2].getType().name());
 
         String matchedCombo = isElevator(belowBlocks);
         if (matchedCombo != null) {
@@ -101,15 +108,10 @@ public class Elevator implements Listener, Feature {
                         player.teleport(target);
                     }
                     player.playSound(Sound.sound(Key.key("minecraft:entity.experience_orb.pickup"), Sound.Source.PLAYER, 1.0f, 0.5f));
-                    plugin.sendDebug("電梯上升: " + player.getName() + " 到 Y=" + target.getBlockY());
+                    if (debug) plugin.sendDebug("電梯上升: " + player.getName() + " 到 Y=" + target.getBlockY());
                 });
             }
         }
-    }
-
-    @Override
-    public void unregister() {
-        HandlerList.unregisterAll(this);
     }
 
 // #region Utils
