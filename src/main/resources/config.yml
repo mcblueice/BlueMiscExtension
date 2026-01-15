@@ -9,6 +9,7 @@ Database:
     password: password
   SyncWrite: false #資料更新時是否同步寫入資料庫
   AutosaveInterval: 12000 #自動保存間隔 單位tick
+  CleanPlayerAttributes: true
   debug: false
 Features:
   AbsorptionScale:

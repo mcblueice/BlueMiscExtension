@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -52,9 +55,11 @@ public class PlayerDataListener implements Listener {
             try {
                 databaseUtil.upsertPlayerData(uuid, player.getName());
                 databaseUtil.loadAndCreateCache(uuid).thenRun(() -> {
-                    String[] data = loginData.getOrDefault(uuid, new String[]{"UnknownHostname", "UnknownIp"});
-                    databaseUtil.setHostname(uuid, (data[0] != null) ? data[0] : "UnknownHostname");
-                    databaseUtil.setIpAddress(uuid, (data[1] != null) ? data[1] : "UnknownIp");
+                    String[] data = loginData.remove(uuid);
+                    if (data != null) {
+                        databaseUtil.setHostname(uuid, (data[0] != null) ? data[0] : "UnknownHostname");
+                        databaseUtil.setIpAddress(uuid, (data[1] != null) ? data[1] : "UnknownIp");
+                    }
                 });
             } catch (SQLException e) {
                 plugin.getLogger().warning("同步玩家資料至資料庫時發生錯誤：" + e.getMessage());
@@ -62,6 +67,7 @@ public class PlayerDataListener implements Listener {
             }
         });
 
+        if (plugin.getConfig().getBoolean("Database.CleanPlayerAttributes", true)) cleanAttributes(player);
         playerTasks.put(uuid,
                         TaskScheduler.runPlayerRepeatingTask(player, plugin, () -> {
                             Double tps = ServerUtil.isFolia ? ServerUtil.getRegionTPS(player.getLocation()) : ServerUtil.getTPS();
@@ -79,10 +85,26 @@ public class PlayerDataListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
         databaseUtil.savePlayerDataAsync(uuid, true);
-        loginData.remove(uuid);
 
         TaskScheduler.RepeatingTaskHandler task = playerTasks.remove(uuid);
         if (task != null) task.cancel();
         playerTPSCache.remove(uuid);
+    }
+
+    private void cleanAttributes(Player player) {
+        if (debug) plugin.sendDebug("§e清理玩家 §6" + player.getName() + " §e的屬性基礎值");
+        for (Attribute att : Registry.ATTRIBUTE) {
+            AttributeInstance instance = player.getAttribute(att);
+            if (instance == null) continue;
+            double baseValue = instance.getBaseValue();
+            double roundedValue = Math.round(baseValue * 1000000d) / 1000000d;
+            if (Double.compare(baseValue, roundedValue) != 0) {
+                try {
+                    instance.setBaseValue(roundedValue);
+                } catch (IllegalArgumentException e) {
+                    if (debug) plugin.sendDebug("§c無法設置屬性 " + att.getKey().getKey());
+                }
+            }
+        }
     }
 }
