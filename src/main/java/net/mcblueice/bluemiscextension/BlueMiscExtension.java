@@ -66,7 +66,7 @@ public class BlueMiscExtension extends JavaPlugin {
         if (featureManager != null) featureManager.unloadAll();
 
         if (databaseUtil != null) {
-            sendMessage(lang.get("Prefix") + "伺服器關閉 開始保存玩家資料");
+            sendMessage("伺服器關閉 開始保存玩家資料");
             HashSet<UUID> playerUUIDs = new HashSet<>();
             for (Player player : getServer().getOnlinePlayers()) {
                 playerUUIDs.add(player.getUniqueId());

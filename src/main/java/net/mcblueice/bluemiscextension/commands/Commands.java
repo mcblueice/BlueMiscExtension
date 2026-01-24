@@ -113,6 +113,13 @@ public class Commands implements CommandExecutor, TabCompleter {
                         return true;
                     }
                     return UsageError(sender);
+                case "UNLOCKDATA":
+                    if (!sender.hasPermission("bluemiscextension.workbench")) return NoPermission(sender);
+                    Player target = plugin.getServer().getPlayerExact(args[1]);
+                    if (target == null) return PlayerNotFound(sender, args[1]);
+                    databaseUtil.updateDatabaseField(target.getUniqueId(), "is_data_saved", true).thenRun(() -> {
+                        sender.sendMessage(lang.get("Prefix.Default") + lang.get("ForceUnlockData", target.getName()));
+                    });
                 default:
                     return UsageError(sender);
             }
@@ -151,6 +158,7 @@ public class Commands implements CommandExecutor, TabCompleter {
             if (sender.hasPermission("bluemiscextension.debug")) subs.add("debug");
             if (sender.hasPermission("bluemiscextension.status")) subs.add("status");
             if (sender.hasPermission("bluemiscextension.armor")) subs.add("armor");
+            if (sender.hasPermission("bluemiscextension.unlockdata")) subs.add("unlockdata");
             if (sender.hasPermission("bluemiscextension.workbench") && featureManager.isFeatureEnabled(VirtualWorkbench.class)) subs.add("workbench");
             if (sender.hasPermission("bluemiscextension.armorhide") && featureManager.isFeatureEnabled(ArmorHide.class)) subs.add("armorhide");
             StringUtil.copyPartialMatches(args[0], subs, completions);
@@ -173,6 +181,15 @@ public class Commands implements CommandExecutor, TabCompleter {
             }
             if (args[0].equalsIgnoreCase("armorhide")) {
                 if (!sender.hasPermission("bluemiscextension.armorhide.other")) return Collections.emptyList();
+                for (Player online : plugin.getServer().getOnlinePlayers()) {
+                    subs.add(online.getName());
+                }
+                StringUtil.copyPartialMatches(args[1], subs, completions);
+                Collections.sort(completions);
+                return completions;
+            }
+            if (args[0].equalsIgnoreCase("unlockdata")) {
+                if (!sender.hasPermission("bluemiscextension.unlockdata")) return Collections.emptyList();
                 for (Player online : plugin.getServer().getOnlinePlayers()) {
                     subs.add(online.getName());
                 }

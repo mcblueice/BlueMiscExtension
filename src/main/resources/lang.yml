@@ -9,6 +9,7 @@ PlayerNotFound: "&c找不到玩家: &6%{1}"
 ReloadSuccess: "&aConfig已重新加載"
 DebugEnabled: "&6Debug模式&a已開啟"
 DebugDisabled: "&6Debug模式&c已關閉"
+ForceUnlockData: "&e已強制解鎖玩家數據: &6%{1}"
 
 # 功能管理器
 FeatureManager:

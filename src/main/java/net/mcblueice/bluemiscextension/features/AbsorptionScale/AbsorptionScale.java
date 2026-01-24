@@ -85,10 +85,7 @@ public class AbsorptionScale implements Listener, Feature {
 				}
 
 				Float prevDisplayed = lastDisplayed.get(uuid);
-				if (prevDisplayed != null && Math.abs(prevDisplayed - displayValue) < 1.0f) {
-					event.setCancelled(true);
-					return;
-				}
+				if (prevDisplayed != null && Math.abs(prevDisplayed - displayValue) < 1.0f) displayValue = prevDisplayed;
 				lastDisplayed.put(uuid, displayValue);
 
 				packetData.setValue(displayValue);

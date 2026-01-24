@@ -108,7 +108,8 @@ public class DatabaseUtil {
                     "player_name VARCHAR(32) NOT NULL, " +
                     "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
                     "hostname VARCHAR(255), " +
-                    "ip_address VARCHAR(45)" +
+                    "ip_address VARCHAR(45), " +
+                    "is_data_saved BOOLEAN NOT NULL DEFAULT 1" +
                     ")";
                 break;
             case "sqlite":
@@ -117,7 +118,8 @@ public class DatabaseUtil {
                     "player_name TEXT NOT NULL, " +
                     "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
                     "hostname TEXT, " +
-                    "ip_address TEXT" +
+                    "ip_address TEXT, " +
+                    "is_data_saved BOOLEAN NOT NULL DEFAULT 1" +
                     ")";
                 break;
             default:
@@ -365,7 +367,7 @@ public class DatabaseUtil {
     // endregion 資料保存與載入
 
     // region 資料庫操作
-    private CompletableFuture<Void> updateDatabaseField(UUID uuid, String columnName, Object value) {
+    public CompletableFuture<Void> updateDatabaseField(UUID uuid, String columnName, Object value) {
         return CompletableFuture.runAsync(() -> {
             try {
                 if (uuid == null) return;

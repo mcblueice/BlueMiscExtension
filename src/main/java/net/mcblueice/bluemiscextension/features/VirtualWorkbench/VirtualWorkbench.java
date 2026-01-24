@@ -35,7 +35,7 @@ public class VirtualWorkbench implements Feature {
                     title = lang.get("VirtualWorkbench.Title.WorkbenchTitle").equals("none") ?
                         Component.translatable("block.minecraft.crafting_table") :
                         Component.text(lang.get("VirtualWorkbench.Title.WorkbenchTitle"));
-                    MenuType.CRAFTER_3X3.builder().title(title).build(player).open();
+                    MenuType.CRAFTING.builder().title(title).build(player).open();
                     if (debug) plugin.sendDebug("已為玩家開啟工作台: " + player.getName());
                     break;
                 case "ANVIL":
