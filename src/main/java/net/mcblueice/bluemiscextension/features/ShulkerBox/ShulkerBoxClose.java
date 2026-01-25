@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.bukkit.Sound;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -12,7 +13,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -33,7 +34,7 @@ public class ShulkerBoxClose implements Listener {
         this.debug = plugin.getConfig().getBoolean("Features.ShulkerBox.debug", false);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClickPersist(InventoryClickEvent event) {
         if (event.isCancelled()) return;
         if (!(event.getWhoClicked() instanceof Player)) return;
@@ -44,7 +45,7 @@ public class ShulkerBoxClose implements Listener {
         if (shulkerBoxUuid == null) return;
 
         Inventory top = player.getOpenInventory().getTopInventory();
-        if (top == null || shulkerBoxUuid == null) return;
+        if (top == null || top.getType() != InventoryType.SHULKER_BOX) return;
         if (!(top.getHolder() instanceof Player) || !top.getHolder().equals(player)) return;
 
         int rawSlot = event.getRawSlot();
@@ -55,12 +56,18 @@ public class ShulkerBoxClose implements Listener {
         }
         if (!affectsTop) return;
 
+        ItemStack foundBox = ShulkerBoxUtil.findShulkerBoxItem(player, shulkerBoxUuid);
+        if (foundBox == null) {
+            handleMissingBoxInteraction(event, player);
+            return;
+        }
+
         TaskScheduler.runTask(player, plugin, () -> {
-            saveInventoryToItem(player, top, shulkerBoxUuid);
+            saveInventoryToItem(player, top, shulkerBoxUuid, foundBox);
         });
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryDragPersist(InventoryDragEvent event) {
         if (event.isCancelled()) return;
         if (!(event.getWhoClicked() instanceof Player)) return;
@@ -69,8 +76,8 @@ public class ShulkerBoxClose implements Listener {
         UUID shulkerUuid = manager.getOpenedShulkerBoxes().get(uuid);
         if (shulkerUuid == null) return;
 
-        Inventory top = player.getOpenInventory() != null ? player.getOpenInventory().getTopInventory() : null;
-        if (top == null || shulkerUuid == null) return;
+        Inventory top = player.getOpenInventory().getTopInventory();
+        if (top == null || top.getType() != InventoryType.SHULKER_BOX) return;
         if (!(top.getHolder() instanceof Player) || !top.getHolder().equals(player)) return;
 
         boolean affectsTop = false;
@@ -82,16 +89,15 @@ public class ShulkerBoxClose implements Listener {
         }
         if (!affectsTop) return;
 
-        TaskScheduler.runTask(player, plugin, () -> {
-            saveInventoryToItem(player, top, shulkerUuid);
-        });
-    }
+        ItemStack foundBox = ShulkerBoxUtil.findShulkerBoxItem(player, shulkerUuid);
+        if (foundBox == null) {
+            handleMissingBoxInteraction(event, player);
+            return;
+        }
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        UUID uuid = event.getPlayer().getUniqueId();
-        manager.getOpenedShulkerBoxes().remove(uuid);
-        manager.getOpenCooldowns().remove(uuid);
+        TaskScheduler.runTask(player, plugin, () -> {
+            saveInventoryToItem(player, top, shulkerUuid, foundBox);
+        });
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -102,42 +108,31 @@ public class ShulkerBoxClose implements Listener {
         UUID shulkerUuid = manager.getOpenedShulkerBoxes().get(uuid);
         Inventory closedInv = event.getInventory();
         
-        if (shulkerUuid == null || closedInv == null) return;
-        if (!(closedInv.getHolder() instanceof Player) || !closedInv.getHolder().equals(player)) return;
+        if (shulkerUuid == null) return;
+        if (event.getView().getType() != InventoryType.SHULKER_BOX) return;
+        if (closedInv == null) return;
+
         TaskScheduler.runTask(player, plugin, () -> {
-            saveInventoryToItem(player, closedInv, shulkerUuid);
+            saveInventoryToItem(player, closedInv, shulkerUuid, null);
+            player.playSound(player.getLocation(), Sound.BLOCK_SHULKER_BOX_CLOSE, 1f, 1f);
+            manager.getOpenedShulkerBoxes().remove(uuid);
         });
-        
-        player.playSound(player.getLocation(), Sound.BLOCK_SHULKER_BOX_CLOSE, 1f, 1f);
-        manager.getOpenedShulkerBoxes().remove(uuid);
     }
 
-    private void saveInventoryToItem(Player player, Inventory inv, UUID shulkerUuid) {
+    private void saveInventoryToItem(Player player, Inventory inv, UUID shulkerUuid, ItemStack cachedItem) {
         if (debug) plugin.sendDebug("§e開始保存界伏盒內容: " + shulkerUuid);
-        
+
         if (player == null || inv == null || shulkerUuid == null) return;
 
-        ItemStack shulkerBoxItem = null;
-        ItemStack mainHand = player.getInventory().getItemInMainHand();
-        UUID mainUuid = ShulkerBoxUtil.getUUID(mainHand);
-        if (mainUuid != null && mainUuid.equals(shulkerUuid)) shulkerBoxItem = mainHand;
+        ItemStack shulkerBoxItem = cachedItem;
+        if (shulkerBoxItem == null) shulkerBoxItem = ShulkerBoxUtil.findShulkerBoxItem(player, shulkerUuid);
 
         if (shulkerBoxItem == null) {
-            ItemStack offHand = player.getInventory().getItemInOffHand();
-            UUID offUuid = ShulkerBoxUtil.getUUID(offHand);
-            if (offUuid != null && offUuid.equals(shulkerUuid)) shulkerBoxItem = offHand;
+            plugin.getLogger().severe("[Critical] 玩家 " + player.getName() + " 的界伏盒(UUID: " + shulkerUuid + ") 在保存時遺失!");
+            plugin.getLogger().severe("[Critical] 可能導致數據丟失");
+            player.sendMessage("§7§l[§c§l錯誤§7§l] §c無法保存界伏盒數據 請聯繫管理員!");
+            return;
         }
-        if (shulkerBoxItem == null) {
-            for (ItemStack item : player.getInventory().getContents()) {
-                if (item == null) continue;
-                UUID itemUuid = ShulkerBoxUtil.getUUID(item);
-                if (itemUuid != null && itemUuid.equals(shulkerUuid)) {
-                    shulkerBoxItem = item;
-                    break;
-                }
-            }
-        }
-        if (shulkerBoxItem == null) return;
 
         ItemMeta shulkerBoxMeta = shulkerBoxItem.getItemMeta();
         if (!(shulkerBoxMeta instanceof BlockStateMeta)) return;
@@ -146,12 +141,28 @@ public class ShulkerBoxClose implements Listener {
         if (!(blockState instanceof InventoryHolder)) return;
 
         Inventory holderInv = ((InventoryHolder) blockState).getInventory();
-        
+
         holderInv.setContents(inv.getContents());
         blockMeta.setBlockState(blockState);
         shulkerBoxItem.setItemMeta(blockMeta);
 
+        if (inv.isEmpty()) {
+            if (debug) plugin.sendDebug("§e界伏盒已清空 正在移除 UUID:" + shulkerUuid);
+            ShulkerBoxUtil.removeUUID(shulkerBoxItem);
+        }
+
         player.updateInventory();
         if (debug) plugin.sendDebug("§a成功保存界伏盒內容: " + shulkerUuid);
+    }
+
+    private void handleMissingBoxInteraction(Cancellable event, Player player) {
+        event.setCancelled(true);
+        player.updateInventory();
+
+        TaskScheduler.runTask(player, plugin, () -> {
+            if (player.getOpenInventory().getType() == InventoryType.SHULKER_BOX) player.closeInventory();
+            player.sendMessage("§7§l[§c§l錯誤§7§l] §c界伏盒遺失 操作已取消!");
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
+        });
     }
 }

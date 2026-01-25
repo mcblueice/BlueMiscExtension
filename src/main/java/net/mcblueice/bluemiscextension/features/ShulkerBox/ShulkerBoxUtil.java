@@ -3,11 +3,14 @@ package net.mcblueice.bluemiscextension.features.ShulkerBox;
 import java.util.UUID;
 
 import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Openable;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -49,6 +52,33 @@ public final class ShulkerBoxUtil {
         item.setItemMeta(meta); 
     }
 // #endregion
+    public static ItemStack findShulkerBoxItem(Player player, UUID targetUuid) {
+        if (player == null || targetUuid == null) return null;
+
+        PlayerInventory inv = player.getInventory();
+
+        ItemStack mainHand = inv.getItemInMainHand();
+        if (isMatchingShulker(mainHand, targetUuid)) return mainHand;
+
+        ItemStack offHand = inv.getItemInOffHand();
+        if (isMatchingShulker(offHand, targetUuid)) return offHand;
+
+        for (ItemStack item : inv.getContents()) {
+            if (isMatchingShulker(item, targetUuid)) return item;
+        }
+        for (ItemStack armorItem : inv.getArmorContents()) {
+            if (isMatchingShulker(armorItem, targetUuid)) return armorItem;
+        }
+        return null;
+    }
+
+    public static boolean isMatchingShulker(ItemStack item, UUID targetUuid) {
+        if (item == null) return false;
+        if (!Tag.SHULKER_BOXES.isTagged(item.getType())) return false;
+
+        UUID itemUuid = ShulkerBoxUtil.getUUID(item);
+        return itemUuid != null && itemUuid.equals(targetUuid);
+    }
 
     public static boolean isInteractableBlock(Block block) {
         if (block == null) return false;
