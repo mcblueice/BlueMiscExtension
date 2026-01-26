@@ -1,12 +1,17 @@
 package net.mcblueice.bluemiscextension.features.ShulkerBox;
 
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
+import org.bukkit.block.data.type.Switch;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -80,28 +85,38 @@ public final class ShulkerBoxUtil {
         return itemUuid != null && itemUuid.equals(targetUuid);
     }
 
+    private static final Set<Material> MISC_INTERACTABLES = EnumSet.of(
+            Material.CRAFTING_TABLE,
+            Material.ENCHANTING_TABLE,
+            Material.STONECUTTER,
+            Material.LOOM,
+            Material.JUKEBOX,
+            Material.NOTE_BLOCK,
+            Material.BELL,
+            Material.CARTOGRAPHY_TABLE,
+            Material.GRINDSTONE,
+            Material.SMITHING_TABLE,
+            Material.BEACON,
+            Material.CAKE,
+            Material.DRAGON_EGG,
+            Material.REPEATER,
+            Material.COMPARATOR,
+            Material.DAYLIGHT_DETECTOR
+    );
+
     public static boolean isInteractableBlock(Block block) {
         if (block == null) return false;
-        BlockState state = block.getState();
-        if (state instanceof InventoryHolder) return true;
-        if (block.getBlockData() instanceof Openable) return true;
 
-        String name = block.getType().name();
-        if (name.contains("BUTTON")
-            || name.contains("PRESSURE_PLATE")
-            || name.contains("LEVER")
-            || name.contains("DOOR")
-            || name.contains("TRAPDOOR")
-            || name.contains("LECTERN")
-            || name.contains("CRAFTING_TABLE")
-            || name.contains("ENCHANTING_TABLE")
-            || name.contains("ANVIL")
-            || name.contains("STONECUTTER")
-            || name.contains("LOOM")
-            || name.contains("JUKEBOX")
-            || name.contains("NOTE_BLOCK")
-            || name.contains("BELL")
-            ) return true;
-        return false;
+        Material type = block.getType();
+        BlockState state = block.getState();
+        BlockData data = block.getBlockData();
+
+        if (state instanceof InventoryHolder) return true;
+        if (data instanceof Openable) return true;
+        if (data instanceof Switch) return true;
+
+        if (Tag.ANVIL.isTagged(type)) return true;
+
+        return MISC_INTERACTABLES.contains(type);
     }
 }
