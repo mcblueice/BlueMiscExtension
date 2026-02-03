@@ -2,6 +2,7 @@ package net.mcblueice.bluemiscextension.features.ShulkerBox;
 
 import java.util.UUID;
 
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -38,6 +39,7 @@ public class ShulkerBoxLock implements Listener {
 
             if (ShulkerBoxUtil.isMatchingShulker(hotbarItem, targetUuid)) {
                 if (debug) plugin.sendDebug("§b" + player.getName() + "§c熱鍵交換被阻止");
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.5f);
                 event.setCancelled(true);
                 return;
             }
@@ -48,6 +50,7 @@ public class ShulkerBoxLock implements Listener {
             ItemStack offhand = player.getInventory().getItemInOffHand();
             if (ShulkerBoxUtil.isMatchingShulker(offhand, targetUuid)) {
                 if (debug) plugin.sendDebug("§b" + player.getName() + "§c副手交換被阻止");
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.5f);
                 event.setCancelled(true);
                 return;
             }
@@ -58,6 +61,7 @@ public class ShulkerBoxLock implements Listener {
             ItemStack cursor = event.getCursor();
             if (ShulkerBoxUtil.isMatchingShulker(cursor, targetUuid)) {
                 if (debug) plugin.sendDebug("§b" + player.getName() + "§c雙擊收集被阻止");
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.5f);
                 event.setCancelled(true);
                 return;
             }
@@ -66,6 +70,7 @@ public class ShulkerBoxLock implements Listener {
         // 通用檢查 (一般點擊 Shift點擊 丟棄 副手交換(主手狀態))
         if (ShulkerBoxUtil.isMatchingShulker(event.getCurrentItem(), targetUuid)) {
             if (debug) plugin.sendDebug("§b" + player.getName() + "§c通用物品互動被阻止");
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.5f);
             event.setCancelled(true);
             return;
         }
@@ -82,6 +87,7 @@ public class ShulkerBoxLock implements Listener {
         // 拖曳物品檢查
         if (ShulkerBoxUtil.isMatchingShulker(event.getOldCursor(), targetUuid)) {
             if (debug) plugin.sendDebug("§b" + player.getName() + "§c拖曳物品互動被阻止");
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.5f);
             event.setCancelled(true);
             return;
         }
@@ -90,6 +96,7 @@ public class ShulkerBoxLock implements Listener {
         for (ItemStack item : event.getNewItems().values()) {
             if (ShulkerBoxUtil.isMatchingShulker(item, targetUuid)) {
                 if (debug) plugin.sendDebug("§b" + player.getName() + "§c拖曳目標互動被阻止");
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 0.5f);
                 event.setCancelled(true);
                 return;
             }

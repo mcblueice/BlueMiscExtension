@@ -16,6 +16,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import com.google.common.collect.Multimap;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 
@@ -72,6 +74,8 @@ public final class ArmorHideUtil {
                 break;
         }
         ItemStack newItem = new ItemStack(newMaterial);
+        // glider
+        if (item.hasData(DataComponentTypes.GLIDER)) newItem.setData(DataComponentTypes.GLIDER);
         ItemMeta newMeta = newItem.getItemMeta();
         ItemMeta oldMeta = item.getItemMeta();
         if (oldMeta == null) {

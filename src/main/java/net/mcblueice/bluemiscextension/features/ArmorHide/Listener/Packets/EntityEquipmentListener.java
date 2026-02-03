@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
@@ -19,6 +18,7 @@ import com.comphenix.protocol.wrappers.Pair;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
+import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 
 public class EntityEquipmentListener extends PacketAdapter {
 	private final ArmorHide armorHide;
@@ -31,15 +31,12 @@ public class EntityEquipmentListener extends PacketAdapter {
 	@Override
 	public void onPacketSending(PacketEvent event) {
 		PacketContainer originalPacket = event.getPacket();
-		Player viewer = event.getPlayer();
 
 		Integer entityId = originalPacket.getIntegers().readSafely(0);
 		if (entityId == null) return;
 
-		Entity trackedEntity = ProtocolLibrary.getProtocolManager().getEntityFromID(viewer.getWorld(), entityId);
-		if (!(trackedEntity instanceof Player)) return;
-
-		Player targetPlayer = (Player) trackedEntity;
+		Entity trackedEntity = PlayerDataListener.playerIDCache.get(entityId);
+		if (!(trackedEntity instanceof Player targetPlayer)) return;
 		if (!armorHide.isArmorHidden(targetPlayer)) return;
 
 		List<Pair<EnumWrappers.ItemSlot, ItemStack>> pairs = originalPacket.getSlotStackPairLists().readSafely(0);

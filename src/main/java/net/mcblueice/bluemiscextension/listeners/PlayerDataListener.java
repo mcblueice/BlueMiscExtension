@@ -28,11 +28,15 @@ public class PlayerDataListener implements Listener {
     private final Map<UUID, TaskScheduler.RepeatingTaskHandler> playerTasks = new ConcurrentHashMap<>();
     private final Map<UUID, String[]> loginData = new ConcurrentHashMap<>();
     public static final Map<UUID, Double> playerTPSCache = new ConcurrentHashMap<>();
+    public static final Map<Integer, Player> playerIDCache = new ConcurrentHashMap<>();
 
     public PlayerDataListener(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.databaseUtil = plugin.getDatabaseUtil();
         this.debug = plugin.getConfig().getBoolean("Database.debug", false);
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            playerIDCache.put(player.getEntityId(), player);
+        }
     }
 
     @EventHandler
@@ -68,6 +72,7 @@ public class PlayerDataListener implements Listener {
         });
 
         if (plugin.getConfig().getBoolean("Database.CleanPlayerAttributes", true)) cleanAttributes(player);
+        playerIDCache.put(event.getPlayer().getEntityId(), event.getPlayer());
         playerTasks.put(uuid,
                         TaskScheduler.runPlayerRepeatingTask(player, plugin, () -> {
                             Double tps = ServerUtil.isFolia ? ServerUtil.getRegionTPS(player.getLocation()) : ServerUtil.getTPS();
@@ -88,6 +93,7 @@ public class PlayerDataListener implements Listener {
 
         TaskScheduler.RepeatingTaskHandler task = playerTasks.remove(uuid);
         if (task != null) task.cancel();
+        playerIDCache.remove(player.getEntityId());
         playerTPSCache.remove(uuid);
     }
 

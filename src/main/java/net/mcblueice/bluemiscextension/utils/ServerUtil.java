@@ -86,7 +86,7 @@ public class ServerUtil {
         builder.append(Component.text("§8§m----------§r§5全域數據§8§m----------\n"));
         
         double[] tps = Bukkit.getTPS();
-        builder.append(Component.text("§6TPS: " + (tps[0]) + "§7, " + (tps[1]) + "§7, " + (tps[2]) + "\n"));
+        builder.append(Component.text("§6TPS: " + formatTPS(tps[0]) + "§7, " + formatTPS(tps[1]) + "§7, " + formatTPS(tps[2]) + "\n"));
 
         int totalChunks = 0;
         int totalEntities = 0;
