@@ -40,6 +40,9 @@ Features:
   VirtualWorkbench:
     enable: true
     debug: false
+  BedrockGlideElytra:
+    enable: true
+    debug: false
   PlaceholderAPI:
     enable: true
     debug: false

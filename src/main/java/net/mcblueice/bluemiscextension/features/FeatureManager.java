@@ -15,6 +15,7 @@ import net.mcblueice.bluemiscextension.features.Elevator.Elevator;
 import net.mcblueice.bluemiscextension.features.LightBlock.LightBlock;
 import net.mcblueice.bluemiscextension.features.PlaceholderAPI.PlaceholderFeature;
 import net.mcblueice.bluemiscextension.features.VirtualWorkbench.VirtualWorkbench;
+import net.mcblueice.bluemiscextension.features.BedrockGlideElytra.BedrockGlideElytra;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 
 public class FeatureManager {
@@ -37,6 +38,7 @@ public class FeatureManager {
         loadFeature("Elevator", Elevator::new);
         loadFeature("LightBlock", LightBlock::new);
         loadFeature("VirtualWorkbench", VirtualWorkbench::new);
+        loadFeature("BedrockGlideElytra", new String[]{"ProtocolLib", "Floodgate"}, BedrockGlideElytra::new);
         loadFeature("PlaceholderAPI", "PlaceholderAPI", PlaceholderFeature::new);
     }
 

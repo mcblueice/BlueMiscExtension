@@ -6,7 +6,7 @@
 
     <groupId>net.mcblueice</groupId>
     <artifactId>BlueMiscExtension</artifactId>
-    <version>1.5.6-a</version>
+    <version>1.5.6</version>
     <packaging>jar</packaging>
 
     <name>BlueMiscExtension</name>
@@ -26,6 +26,10 @@
         <repository>
             <id>placeholderapi-repo</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+        <repository>
+            <id>opencollab-snapshot</id>
+            <url>https://repo.opencollab.dev/main/</url>
         </repository>
     </repositories>
 
@@ -52,6 +56,12 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>5.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.geysermc.floodgate</groupId>
+            <artifactId>api</artifactId>
+            <version>2.2.4-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

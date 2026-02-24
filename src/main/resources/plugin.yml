@@ -5,6 +5,7 @@ api-version: 1.21.11
 softdepend:
   - ProtocolLib
   - PlaceholderAPI
+  - floodgate
 folia-supported: true
 author: Blue
 description: 雜項擴展

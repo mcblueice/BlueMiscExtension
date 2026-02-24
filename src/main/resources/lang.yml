@@ -30,6 +30,7 @@ FeatureName:
   Elevator: "電梯"
   LightBlock: "光源方塊"
   VirtualWorkbench: "虛擬工作站"
+  BedrockGlideElytra: "基岩版虛擬鞘翅"
   PlaceholderAPI: "佔位符"
 
 # 虛擬工作站
