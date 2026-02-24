@@ -73,9 +73,9 @@ public final class ArmorHideUtil {
                 newMaterial = Material.OAK_BUTTON;
                 break;
         }
-        ItemStack newItem = new ItemStack(newMaterial);
         // glider
-        if (item.hasData(DataComponentTypes.GLIDER)) newItem.setData(DataComponentTypes.GLIDER);
+        if (item.hasData(DataComponentTypes.GLIDER)) newMaterial = Material.ELYTRA;
+        ItemStack newItem = new ItemStack(newMaterial);
         ItemMeta newMeta = newItem.getItemMeta();
         ItemMeta oldMeta = item.getItemMeta();
         if (oldMeta == null) {

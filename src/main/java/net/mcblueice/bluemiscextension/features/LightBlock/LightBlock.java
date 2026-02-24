@@ -54,7 +54,7 @@ public class LightBlock implements Listener, Feature {
                     Block block = location.clone().add(x, y, z).getBlock();
                     if (block.getType() != Material.LIGHT) continue;
                     Location particleLocation = block.getLocation().add(0.5, 0.5, 0.5);
-                    block.getWorld().spawnParticle(Particle.BLOCK_MARKER, particleLocation, 1, block.getBlockData());
+                    player.spawnParticle(Particle.BLOCK_MARKER, particleLocation, 1, block.getBlockData());
                 }
             }
         }
@@ -84,7 +84,7 @@ public class LightBlock implements Listener, Feature {
             lightLevel.setLevel((lightLevel.getLevel() + 1) % 16);
             block.setBlockData(lightLevel);
             Location particleLocation = blockLoc;
-            if (block.getType() == Material.LIGHT) block.getWorld().spawnParticle(Particle.BLOCK_MARKER, particleLocation, 1, block.getBlockData());
+            if (block.getType() == Material.LIGHT) player.spawnParticle(Particle.BLOCK_MARKER, particleLocation, 1, block.getBlockData());
         }
     }
 }

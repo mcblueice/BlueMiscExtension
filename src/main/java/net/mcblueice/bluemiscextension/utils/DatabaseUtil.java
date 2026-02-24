@@ -441,6 +441,63 @@ public class DatabaseUtil {
     }
     // endregion 資料庫操作
 
+    // region 其他查詢
+    public CompletableFuture<UUID> getUUID(String playerName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (playerName == null || playerName.isEmpty()) return null;
+            if (dataSource == null || dataSource.isClosed()) return null;
+
+            String sql = "SELECT uuid FROM player_data WHERE player_name = ? LIMIT 1";
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, playerName);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String uuidStr = rs.getString("uuid");
+                        if (uuidStr != null && !uuidStr.isEmpty()) {
+                            try {
+                                return UUID.fromString(uuidStr);
+                            } catch (IllegalArgumentException e) {
+                                plugin.getLogger().warning("Database corruption: Invalid UUID format for player " + playerName + ": " + uuidStr);
+                            }
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to lookup UUID by name [" + playerName + "]: " + e.getMessage());
+            }
+            return null;
+        }, runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
+
+    public CompletableFuture<String> getName(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (uuid == null) return null;
+            if (dataSource == null || dataSource.isClosed()) return null;
+
+            String sql = "SELECT player_name FROM player_data WHERE uuid = ?";
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, uuid.toString());
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getString("player_name");
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to lookup name by UUID [" + uuid + "]: " + e.getMessage());
+            }
+            return null;
+        }, runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
+    // endregion 其他查詢
+
     // region ArmorHidden處理
     public boolean getArmorHiddenState(UUID uuid) {
         if (uuid == null) return false;

@@ -5,6 +5,7 @@ Prefix:
 NoPermission: "&c你沒有權限使用此指令!"
 OnlyPlayer: "&c此指令僅限玩家使用!"
 UsageError: "&c用法錯誤!"
+SearchingPlayer: "&7正在搜尋玩家: &6%{1}&7 的資料..."
 PlayerNotFound: "&c找不到玩家: &6%{1}"
 ReloadSuccess: "&aConfig已重新加載"
 DebugEnabled: "&6Debug模式&a已開啟"

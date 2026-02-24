@@ -6,7 +6,7 @@
 
     <groupId>net.mcblueice</groupId>
     <artifactId>BlueMiscExtension</artifactId>
-    <version>1.5.5</version>
+    <version>1.5.6-a</version>
     <packaging>jar</packaging>
 
     <name>BlueMiscExtension</name>

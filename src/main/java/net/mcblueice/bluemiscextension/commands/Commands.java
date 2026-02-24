@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import net.mcblueice.bluemiscextension.features.VirtualWorkbench.VirtualWorkbench;
+import net.kyori.adventure.text.Component;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.FeatureManager;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
@@ -114,12 +116,28 @@ public class Commands implements CommandExecutor, TabCompleter {
                     }
                     return UsageError(sender);
                 case "UNLOCKDATA":
-                    if (!sender.hasPermission("bluemiscextension.workbench")) return NoPermission(sender);
-                    Player target = plugin.getServer().getPlayerExact(args[1]);
-                    if (target == null) return PlayerNotFound(sender, args[1]);
-                    databaseUtil.updateDatabaseField(target.getUniqueId(), "is_data_saved", true).thenRun(() -> {
-                        sender.sendMessage(lang.get("Prefix.Default") + lang.get("ForceUnlockData", target.getName()));
-                    });
+                    if (!sender.hasPermission("bluemiscextension.unlockdata")) return NoPermission(sender);
+                    if (args.length < 2) return UsageError(sender);
+                    String name = args[1];
+                    if (plugin.getServer().getPlayerExact(name) instanceof Player target) {
+                            UUID uuid = target.getUniqueId();
+                            target.kick(Component.text("§6管理員正在修復你的資料 請稍後重新登入"));
+                            databaseUtil.updateDatabaseField(uuid, "is_data_saved", true).thenRun(() -> {
+                                sender.sendMessage(lang.get("Prefix.Default") + lang.get("ForceUnlockData", name));
+                            });
+                    } else {
+                        sender.sendMessage(lang.get("Prefix.Default") + lang.get("SearchingPlayer", name));
+                        databaseUtil.getUUID(name).thenAccept(uuid -> {
+                            if (uuid == null) {
+                                sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNotFound", name));
+                                return;
+                            }
+                            databaseUtil.updateDatabaseField(uuid, "is_data_saved", true).thenRun(() -> {
+                                sender.sendMessage(lang.get("Prefix.Default") + lang.get("ForceUnlockData", name));
+                            });
+                        });
+                    }
+                    return true;
                 default:
                     return UsageError(sender);
             }
