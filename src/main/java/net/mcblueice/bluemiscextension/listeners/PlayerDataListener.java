@@ -10,19 +10,23 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.features.Feature;
+import net.mcblueice.bluemiscextension.features.FeatureManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
-import net.mcblueice.bluemiscextension.utils.ServerUtil;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluelib.utils.ServerUtil;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 
 public class PlayerDataListener implements Listener {
     private final BlueMiscExtension plugin;
     private final DatabaseUtil databaseUtil;
+    private final FeatureManager featureManager;
     private final boolean debug;
 
     private final Map<UUID, TaskScheduler.RepeatingTaskHandler> playerTasks = new ConcurrentHashMap<>();
@@ -33,6 +37,7 @@ public class PlayerDataListener implements Listener {
     public PlayerDataListener(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.databaseUtil = plugin.getDatabaseUtil();
+        this.featureManager = plugin.getFeatureManager();
         this.debug = plugin.getConfig().getBoolean("Database.debug", false);
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             playerIDCache.put(player.getEntityId(), player);
@@ -50,7 +55,7 @@ public class PlayerDataListener implements Listener {
         plugin.sendMessage("§e玩家 §b" + playerName + " §e從 §a" + hostname + " §e(IP: §9" + ip + "§e) 登入伺服器");
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
@@ -64,6 +69,13 @@ public class PlayerDataListener implements Listener {
                         databaseUtil.setHostname(uuid, (data[0] != null) ? data[0] : "UnknownHostname");
                         databaseUtil.setIpAddress(uuid, (data[1] != null) ? data[1] : "UnknownIp");
                     }
+                    TaskScheduler.runTask(player, plugin, () -> {
+                        if (player.isOnline()) {
+                            for (Feature feature : featureManager.getActiveFeatures()) {
+                                feature.onPlayerDataLoaded(player);
+                            }
+                        }
+                    });
                 });
             } catch (SQLException e) {
                 plugin.getLogger().warning("同步玩家資料至資料庫時發生錯誤：" + e.getMessage());
@@ -75,14 +87,21 @@ public class PlayerDataListener implements Listener {
         playerIDCache.put(event.getPlayer().getEntityId(), event.getPlayer());
         playerTasks.put(uuid,
                         TaskScheduler.runPlayerRepeatingTask(player, plugin, () -> {
-                            Double tps = ServerUtil.isFolia ? ServerUtil.getRegionTPS(player.getLocation()) : ServerUtil.getTPS();
+                            Double tps = ServerUtil.getTPS(player.getLocation())[1];
                             if (debug) plugin.sendDebug("更新cache中的TPS數據 for 玩家: " + player.getName() + "TPS: " + tps);
                             playerTPSCache.put(uuid, tps);
                         }, 20L, 20L));
-
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerQuitPrepare(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        for (Feature feature : featureManager.getActiveFeatures()) {
+            feature.onPlayerDataUnload(player);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
         DatabaseUtil databaseUtil = plugin.getDatabaseUtil();
         if (databaseUtil == null) return;
@@ -95,6 +114,7 @@ public class PlayerDataListener implements Listener {
         if (task != null) task.cancel();
         playerIDCache.remove(player.getEntityId());
         playerTPSCache.remove(uuid);
+        loginData.remove(uuid);
     }
 
     private void cleanAttributes(Player player) {

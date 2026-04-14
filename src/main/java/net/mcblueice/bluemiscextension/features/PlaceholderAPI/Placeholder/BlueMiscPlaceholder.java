@@ -11,8 +11,8 @@ import net.mcblueice.bluemiscextension.features.AbsorptionScale.AbsorptionScale;
 import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 //import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
-import net.mcblueice.bluemiscextension.utils.MessageUtil;
-import net.mcblueice.bluemiscextension.utils.ServerUtil;
+import net.mcblueice.bluelib.utils.TextUtil;
+import net.mcblueice.bluemiscextension.utils.DatabaseUtil.PlayerData;
 
 public final class BlueMiscPlaceholder extends PlaceholderExpansion {
     private final BlueMiscExtension plugin;
@@ -46,16 +46,23 @@ public final class BlueMiscPlaceholder extends PlaceholderExpansion {
         if (rawParams == null || rawParams.isEmpty()) return "";
 
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = databaseUtil.getPlayerData(uuid);
         String[] parts = rawParams.split("_", 2);
         String key = parts[0].toLowerCase();
 
         switch (key) {
             case "armorhidden":
-                return databaseUtil.getArmorHiddenState(uuid) ? "true" : "false";
+                return playerData.hiddenArmor() ? "true" : "false";
+            case "hasnickname":
+                return playerData.nickname().isEmpty() ? "false" : "true";
+            case "nickname":
+                return playerData.nickname();
+            case "displayname":
+                return playerData.getDisplayName();
             case "ip":
-                return databaseUtil.getIp(uuid);
+                return playerData.ip();
             case "hostname":
-                return databaseUtil.getHostname(uuid);
+                return playerData.hostname();
             case "absorption":
                 return String.valueOf(AbsorptionScale.getAbsorption(uuid));
             case "maxabsorption":
@@ -63,10 +70,16 @@ public final class BlueMiscPlaceholder extends PlaceholderExpansion {
             case "minimessage":
                 if (parts.length < 2) return "";
                 String content = PlaceholderAPI.setBracketPlaceholders(player, parts[1]);
-                return MessageUtil.legacyToMiniMessage(content);
+                return TextUtil.parseToString(content);
             case "tps":
                 double tps = PlayerDataListener.playerTPSCache.getOrDefault(uuid, 0.0);
-                return ServerUtil.formatTPS(tps);
+                tps = Math.min(20.0, tps);
+                String tpsStr = new java.text.DecimalFormat("#.##").format(tps);
+                if (tps >= 19.8) return "§a" + tpsStr;
+                if (tps >= 18.0) return "§2" + tpsStr;
+                if (tps >= 15.0) return "§e" + tpsStr;
+                if (tps >= 10.0) return "§c" + tpsStr;
+                return "§4" + tpsStr;
             default:
                  return "";
         }

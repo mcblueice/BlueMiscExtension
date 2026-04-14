@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.geysermc.floodgate.api.FloodgateApi;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -14,7 +15,6 @@ import com.comphenix.protocol.events.PacketEvent;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.BedrockGlideElytra.BedrockGlideElytra;
-import net.mcblueice.bluemiscextension.utils.FloodgateUtil;
 
 public class WindowItemsListener extends PacketAdapter {
     private static final int PLAYER_INVENTORY_WINDOW_ID = 0;
@@ -30,7 +30,7 @@ public class WindowItemsListener extends PacketAdapter {
     @Override
     public void onPacketSending(PacketEvent event) {
         Player player = event.getPlayer();
-        if (!FloodgateUtil.isFloodgatePlayer(player)) return;
+        if (!FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) return;
 
         PacketContainer originalPacket = event.getPacket();
 

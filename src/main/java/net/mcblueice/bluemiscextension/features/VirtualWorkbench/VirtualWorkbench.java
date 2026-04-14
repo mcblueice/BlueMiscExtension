@@ -1,12 +1,14 @@
 package net.mcblueice.bluemiscextension.features.VirtualWorkbench;
 
+import java.util.Set;
+
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.MenuType;
 
 import net.kyori.adventure.text.Component;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 import net.mcblueice.bluemiscextension.features.Feature;
 
 public class VirtualWorkbench implements Feature {
@@ -20,11 +22,25 @@ public class VirtualWorkbench implements Feature {
         this.debug = plugin.getConfig().getBoolean("Features.VirtualWorkbench.debug", false);
     }
 
-    @Override
-    public void register() {}
+    public static final Set<String> WORKBENCH_TYPES = Set.of(
+        "WORKBENCH",
+        "ANVIL",
+        "GRINDSTONE",
+        "SMITHING",
+        "CARTOGRAPHY",
+        "LOOM",
+        "ENDERCHEST"
+    );
 
     @Override
-    public void unregister() {}
+    public void register() {
+        plugin.getCommandManager().register(new VirtualWorkbenchCommand(plugin, this), "bluemiscextension.workbench", new String[]{"workbench"});
+    }
+
+    @Override
+    public void unregister() {
+        plugin.getCommandManager().unregister("workbench");
+    }
 
     public void open(Player player, String station) {
         if (player == null || station == null) return;

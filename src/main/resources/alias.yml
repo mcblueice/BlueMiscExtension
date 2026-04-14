@@ -1,12 +1,40 @@
-aliases:
-  armorhide: "bluemiscextension armorhide"
+ArmorHide:
+  hidearmor:
+    enabled: true
+    target: "bluemiscextension armorhide"
+
+VirtualWorkbench:
   workbench:
-    workbench: "bluemiscextension workbench workbench"
-    craft: "bluemiscextension workbench workbench"
-    anvil: "bluemiscextension workbench anvil"
-    grindstone: "bluemiscextension workbench grindstone"
-    smithing: "bluemiscextension workbench smithing"
-    cartography: "bluemiscextension workbench cartography"
-    loom: "bluemiscextension workbench loom"
-    enderchest: "bluemiscextension workbench enderchest"
-    ec: "bluemiscextension workbench enderchest"
+    enabled: true
+    target: "bluemiscextension workbench workbench"
+  craft:
+    enabled: true
+    target: "bluemiscextension workbench workbench"
+  anvil:
+    enabled: true
+    target: "bluemiscextension workbench anvil"
+  grindstone:
+    enabled: true
+    target: "bluemiscextension workbench grindstone"
+  smithing:
+    enabled: true
+    target: "bluemiscextension workbench smithing"
+  cartography:
+    enabled: true
+    target: "bluemiscextension workbench cartography"
+  loom:
+    enabled: true
+    target: "bluemiscextension workbench loom"
+  enderchest:
+    enabled: true
+    target: "bluemiscextension workbench enderchest"
+
+PlayerNick:
+  nick:
+    enabled: true
+    target: "bluemiscextension nick"
+
+ItemSignature:
+  sign:
+    enabled: true
+    target: "bluemiscextension sign"

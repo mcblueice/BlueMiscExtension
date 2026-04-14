@@ -25,7 +25,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
-import net.mcblueice.bluemiscextension.utils.ServerUtil;
+import net.mcblueice.bluelib.utils.ServerUtil;
 
 public final class ArmorHideUtil {
     private ArmorHideUtil() {}
@@ -255,7 +255,7 @@ public final class ArmorHideUtil {
         return "item.modifiers.any";
     }
     private static String getAttributeKey(Attribute attribute) {
-        String attributeBaseKey = (ServerUtil.isNewAttributeKey()) ? "attribute.name." : "attribute.name.generic.";
+        String attributeBaseKey = (ServerUtil.isAtLeast(1, 21, 7)) ? "attribute.name." : "attribute.name.generic.";
         return attributeBaseKey + attribute.getKey().getKey();
     }
 

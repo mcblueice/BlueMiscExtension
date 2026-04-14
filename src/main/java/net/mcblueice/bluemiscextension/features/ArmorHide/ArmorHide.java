@@ -64,6 +64,7 @@ public class ArmorHide implements Feature {
         pluginManager.registerEvents(gameModeListener, plugin);
         pluginManager.registerEvents(inventoryClickListener, plugin);
         pluginManager.registerEvents(potionEffectListener, plugin);
+        plugin.getCommandManager().register(new ArmorHideCommand(plugin, this), "bluemiscextension.armorhide", new String[]{"armorhide"});
 	}
 
     @Override
@@ -74,10 +75,11 @@ public class ArmorHide implements Feature {
         HandlerList.unregisterAll(gameModeListener);
         HandlerList.unregisterAll(inventoryClickListener);
         HandlerList.unregisterAll(potionEffectListener);
+        plugin.getCommandManager().unregister("armorhide");
     }
 
     public boolean isArmorHidden(Player player) {
-        if (databaseUtil.getArmorHiddenState(player.getUniqueId())) return true;
+        if (databaseUtil.getPlayerData(player.getUniqueId()).hiddenArmor()) return true;
         if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) return true;
         return false;
     }

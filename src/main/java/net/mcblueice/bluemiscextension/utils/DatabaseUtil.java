@@ -7,9 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +24,7 @@ import com.zaxxer.hikari.HikariPoolMXBean;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent.Builder;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 
 public class DatabaseUtil {
@@ -33,15 +34,56 @@ public class DatabaseUtil {
     private String dbType = "sqlite";
     private static final int MaxRetry = 39;
     private static final long RetryDelay = 10L;
-    private final Set<UUID> dataLoadedPlayers = ConcurrentHashMap.newKeySet();
-    private final ConcurrentHashMap<UUID, Boolean> armorHiddenCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, String> hostnameCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, String> ipCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, PlayerData> playerDataCache = new ConcurrentHashMap<>();
     private TaskScheduler.RepeatingTaskHandler autoSaveTask;
 
     public DatabaseUtil(BlueMiscExtension plugin) {
         this.plugin = plugin;
         this.debug = plugin.getConfig().getBoolean("Database.debug", false);
+    }
+
+    public record PlayerData(
+        UUID uuid,
+        String playerName,
+        boolean hiddenArmor,
+        String nickname,
+        String hostname,
+        String ip
+    ) {
+        public PlayerData {
+            if (playerName == null) playerName = "Unknown";
+            if (nickname == null) nickname = "";
+            if (hostname == null) hostname = "UnknownHostname";
+            if (ip == null) ip = "UnknownIp";
+        }
+
+        public String getDisplayName() {
+            return (nickname == null || nickname.isEmpty()) ? playerName : nickname;
+        }
+
+        public static PlayerData defaultData(UUID uuid, String playerName) {
+            return new PlayerData(uuid, playerName, false, "", "UnknownHostname", "UnknownIp");
+        }
+
+        public PlayerData withPlayerName(String newPlayerName) {
+            return new PlayerData(this.uuid, newPlayerName, this.hiddenArmor, this.nickname, this.hostname, this.ip);
+        }
+
+        public PlayerData withHiddenArmor(boolean newHiddenArmor) {
+            return new PlayerData(this.uuid, this.playerName, newHiddenArmor, this.nickname, this.hostname, this.ip);
+        }
+
+        public PlayerData withNickname(String newNickname) {
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, newNickname, this.hostname, this.ip);
+        }
+
+        public PlayerData withHostname(String newHostname) {
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.nickname, newHostname, this.ip);
+        }
+
+        public PlayerData withIp(String newIp) {
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.nickname, this.hostname, newIp);
+        }
     }
 
     // region 初始化與關閉
@@ -107,8 +149,9 @@ public class DatabaseUtil {
                     "uuid CHAR(36) PRIMARY KEY, " +
                     "player_name VARCHAR(32) NOT NULL, " +
                     "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
-                    "hostname VARCHAR(255), " +
-                    "ip_address VARCHAR(45), " +
+                    "nickname VARCHAR(255) NOT NULL DEFAULT '', " +
+                    "hostname VARCHAR(255) NOT NULL DEFAULT '', " +
+                    "ip_address VARCHAR(45) NOT NULL DEFAULT '', " +
                     "is_data_saved BOOLEAN NOT NULL DEFAULT 1" +
                     ")";
                 break;
@@ -117,8 +160,9 @@ public class DatabaseUtil {
                     "uuid CHAR(36) PRIMARY KEY, " +
                     "player_name TEXT NOT NULL, " +
                     "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
-                    "hostname TEXT, " +
-                    "ip_address TEXT, " +
+                    "nickname TEXT NOT NULL DEFAULT '', " +
+                    "hostname TEXT NOT NULL DEFAULT '', " +
+                    "ip_address TEXT NOT NULL DEFAULT '', " +
                     "is_data_saved BOOLEAN NOT NULL DEFAULT 1" +
                     ")";
                 break;
@@ -134,15 +178,17 @@ public class DatabaseUtil {
             case "mysql":
                 ensureColumnExists("player_data", "player_name", "VARCHAR(32) NOT NULL");
                 ensureColumnExists("player_data", "hidden_armor", "BOOLEAN NOT NULL DEFAULT 0");
-                ensureColumnExists("player_data", "hostname", "VARCHAR(255)");
-                ensureColumnExists("player_data", "ip_address", "VARCHAR(45)");
+                ensureColumnExists("player_data", "nickname", "VARCHAR(255) NOT NULL DEFAULT ''");
+                ensureColumnExists("player_data", "hostname", "VARCHAR(255) NOT NULL DEFAULT ''");
+                ensureColumnExists("player_data", "ip_address", "VARCHAR(45) NOT NULL DEFAULT ''");
                 ensureColumnExists("player_data", "is_data_saved", "BOOLEAN NOT NULL DEFAULT 1");
                 break;
             case "sqlite":
                 ensureColumnExists("player_data", "player_name", "TEXT NOT NULL");
                 ensureColumnExists("player_data", "hidden_armor", "BOOLEAN NOT NULL DEFAULT 0");
-                ensureColumnExists("player_data", "hostname", "TEXT");
-                ensureColumnExists("player_data", "ip_address", "TEXT");
+                ensureColumnExists("player_data", "nickname", "TEXT NOT NULL DEFAULT ''");
+                ensureColumnExists("player_data", "hostname", "TEXT NOT NULL DEFAULT ''");
+                ensureColumnExists("player_data", "ip_address", "TEXT NOT NULL DEFAULT ''");
                 ensureColumnExists("player_data", "is_data_saved", "BOOLEAN NOT NULL DEFAULT 1");
                 break;
             default:
@@ -188,11 +234,11 @@ public class DatabaseUtil {
 
     public void saveAllCachedData() {
         if (dataSource == null || dataSource.isClosed()) return;
-        if (dataLoadedPlayers.isEmpty()) return;
+        if (playerDataCache.isEmpty()) return;
 
         if (debug) plugin.sendDebug("執行資料庫自動保存任務...");
         // new一個新的Set避免被修改
-        savePlayerData(new HashSet<>(dataLoadedPlayers), false);
+        savePlayerData(new HashSet<>(playerDataCache.keySet()), false);
     }
 
     public void savePlayerData(UUID uuid, boolean removeCacheAndUnlock) {
@@ -220,20 +266,17 @@ public class DatabaseUtil {
     }
 
     private void savePlayerDataInternal(Connection connection, UUID uuid, boolean removeCacheAndUnlock) throws SQLException {
-        if (!dataLoadedPlayers.contains(uuid)) return;
-        Map<String, Object> updates = new java.util.HashMap<>();
+        if (!playerDataCache.containsKey(uuid)) return;
+        Map<String, Object> updates = new HashMap<>();
         try {
-            Boolean cachedArmor = armorHiddenCache.get(uuid);
-            if (cachedArmor != null) updates.put("hidden_armor", cachedArmor);
-
-            String cachedHostname = hostnameCache.get(uuid);
-            if (cachedHostname != null) updates.put("hostname", cachedHostname);
-
-            String cachedIp = ipCache.get(uuid);
-            if (cachedIp != null) updates.put("ip_address", cachedIp);
-
+            PlayerData playerData = playerDataCache.get(uuid);
+            if (playerData != null) {
+                updates.put("hidden_armor", playerData.hiddenArmor());
+                updates.put("nickname", playerData.nickname());
+                updates.put("hostname", playerData.hostname());
+                updates.put("ip_address", playerData.ip());
+            }
             if (removeCacheAndUnlock) updates.put("is_data_saved", true);
-
             if (updates.isEmpty()) return;
 
             executeUpdate(connection, uuid, updates);
@@ -304,30 +347,27 @@ public class DatabaseUtil {
                         }
 
                         if (isDataLocked) {
-                            String sql = "SELECT hidden_armor, hostname, ip_address FROM player_data WHERE uuid = ?";
-                            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                                String sql = "SELECT player_name, hidden_armor, nickname, hostname, ip_address FROM player_data WHERE uuid = ?";                            try (PreparedStatement ps = connection.prepareStatement(sql)) {
                                 ps.setString(1, uuid.toString());
                                 try (ResultSet rs = ps.executeQuery()) {
                                     if (rs.next()) {
-                                        boolean dataHiddenArmor = rs.getBoolean("hidden_armor");
-                                        armorHiddenCache.put(uuid, dataHiddenArmor);
-
-                                        String dataHostname = rs.getString("hostname");
-                                        hostnameCache.put(uuid, (dataHostname != null) ? dataHostname : "UnknownHostname");
-                
-                                        String dataIp = rs.getString("ip_address");
-                                        ipCache.put(uuid, (dataIp != null) ? dataIp : "UnknownIp");
+                                        PlayerData playerData = new PlayerData(
+                                            uuid,
+                                            rs.getString("player_name"),
+                                            rs.getBoolean("hidden_armor"),
+                                            rs.getString("nickname"),
+                                            rs.getString("hostname"),
+                                            rs.getString("ip_address")
+                                        );
+                                        playerDataCache.put(uuid, playerData);
                                     } else {
-                                        armorHiddenCache.put(uuid, false);
-                                        hostnameCache.put(uuid, "UnknownHostname");
-                                        ipCache.put(uuid, "UnknownIp");
+                                        Player player = Bukkit.getPlayer(uuid);
+                                        String fallbackName = (player != null) ? player.getName() : "Unknown";
+                                        playerDataCache.put(uuid, PlayerData.defaultData(uuid, fallbackName));
                                     }
                                 }
                             }
-
-                            dataLoadedPlayers.add(uuid);
                             if (debug) plugin.sendDebug("資料已載入並鎖定: " + uuid);
-
                             future.complete(null);
                             return;
                         } else {
@@ -359,10 +399,7 @@ public class DatabaseUtil {
     }
 
     private void clearCache(UUID uuid) {
-        dataLoadedPlayers.remove(uuid);
-        armorHiddenCache.remove(uuid);
-        hostnameCache.remove(uuid);
-        ipCache.remove(uuid);
+        playerDataCache.remove(uuid);
     }
     // endregion 資料保存與載入
 
@@ -498,43 +535,48 @@ public class DatabaseUtil {
     }
     // endregion 其他查詢
 
-    // region ArmorHidden處理
-    public boolean getArmorHiddenState(UUID uuid) {
-        if (uuid == null) return false;
-        return armorHiddenCache.getOrDefault(uuid, false);
+    // region PlayerData 操作
+    public boolean isPlayerDataLoaded(UUID uuid) {
+        return uuid != null && playerDataCache.containsKey(uuid);
+    }
+
+    public PlayerData getPlayerData(UUID uuid) {
+        if (uuid == null) return PlayerData.defaultData(null, "Unknown");
+
+        PlayerData playerData = playerDataCache.get(uuid);
+        if (playerData != null) return playerData;
+
+        Player player = Bukkit.getPlayer(uuid);
+        String fallbackName = (player != null) ? player.getName() : "Unknown";
+        return PlayerData.defaultData(uuid, fallbackName);
     }
 
     public CompletableFuture<Void> setArmorHiddenState(UUID uuid, boolean state) {
-        if (!dataLoadedPlayers.contains(uuid)) return CompletableFuture.completedFuture(null);
-        armorHiddenCache.put(uuid, state);
+        if (!playerDataCache.containsKey(uuid)) return CompletableFuture.completedFuture(null);
+        playerDataCache.computeIfPresent(uuid, (k, data) -> data.withHiddenArmor(state));
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hidden_armor", state);
         return CompletableFuture.completedFuture(null);
     }
-    // endregion ArmorHidden處理
 
-    // region Hostname/IP處理
-    public String getHostname(UUID uuid) {
-        if (uuid == null) return null;
-        return hostnameCache.getOrDefault(uuid, "UnknownHostname");
+    public CompletableFuture<Void> setNickname(UUID uuid, String nickname) {
+        if (!playerDataCache.containsKey(uuid)) return CompletableFuture.completedFuture(null);
+        playerDataCache.computeIfPresent(uuid, (k, data) -> data.withNickname(nickname));
+        if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "nickname", nickname);
+        return CompletableFuture.completedFuture(null);
     }
 
     public CompletableFuture<Void> setHostname(UUID uuid, String hostname) {
-        if (!dataLoadedPlayers.contains(uuid)) return CompletableFuture.completedFuture(null);
-        hostnameCache.put(uuid, hostname);
+        if (!playerDataCache.containsKey(uuid)) return CompletableFuture.completedFuture(null);
+        playerDataCache.computeIfPresent(uuid, (k, data) -> data.withHostname(hostname));
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hostname", hostname);
         return CompletableFuture.completedFuture(null);
     }
 
-    public String getIp(UUID uuid) {
-        if (uuid == null) return null;
-        return ipCache.getOrDefault(uuid, "UnknownIp");
-    }
-
     public CompletableFuture<Void> setIpAddress(UUID uuid, String ip) {
-        if (!dataLoadedPlayers.contains(uuid)) return CompletableFuture.completedFuture(null);
-        ipCache.put(uuid, ip);
+        if (!playerDataCache.containsKey(uuid)) return CompletableFuture.completedFuture(null);
+        playerDataCache.computeIfPresent(uuid, (k, data) -> data.withIp(ip));
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "ip_address", ip);
         return CompletableFuture.completedFuture(null);
     }
-    // endregion Hostname/IP處理
+    // endregion PlayerData 操作
 }

@@ -14,7 +14,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
-import net.mcblueice.bluemiscextension.commands.Commands;
+import net.mcblueice.bluelib.utils.TextUtil;
+import net.mcblueice.bluemiscextension.commands.AliasCommand;
+import net.mcblueice.bluemiscextension.commands.CommandManager;
 import net.mcblueice.bluemiscextension.features.FeatureManager;
 
 public class BlueMiscExtension extends JavaPlugin {
@@ -23,6 +25,8 @@ public class BlueMiscExtension extends JavaPlugin {
     private FeatureManager featureManager;
     private DatabaseUtil databaseUtil;
     private ConfigManager lang;
+    private CommandManager commandManager;
+    private AliasCommand aliasCommand;
     public final UUID CONSOLE_UUID = new UUID(0L, 0L);
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
 
@@ -49,12 +53,13 @@ public class BlueMiscExtension extends JavaPlugin {
         }
 
         featureManager = new FeatureManager(this);
+        commandManager = new CommandManager(this);
+        getCommand("bluemiscextension").setExecutor(commandManager);
+
         featureManager.reload();
-
-        getCommand("bluemiscextension").setExecutor(new Commands(this));
-
+        aliasCommand = new AliasCommand(this);
+        aliasCommand.registerAll();
         getServer().getPluginManager().registerEvents(new PlayerDataListener(this), this);
-
 
         logger.info("BlueMiscExtension 已啟動");
     }
@@ -64,6 +69,7 @@ public class BlueMiscExtension extends JavaPlugin {
         logger.info("BlueMiscExtension 已卸載");
 
         if (featureManager != null) featureManager.unloadAll();
+        if (aliasCommand != null) aliasCommand.unregisterAll();
 
         if (databaseUtil != null) {
             sendMessage("伺服器關閉 開始保存玩家資料");
@@ -88,35 +94,48 @@ public class BlueMiscExtension extends JavaPlugin {
     }
 
     public void sendDebug(String message) {
+        sendDebug("Default", message);
+    }
+    public void sendDebug(String prefixNode, String message) {
         if (debugModePlayers.isEmpty()) return;
+        String debugPrefix = "&eDEBUG: &7"; 
 
         // console
-        if (debugModePlayers.contains(CONSOLE_UUID)) sendMessage("§eDEBUG: §7" + message);
+        if (debugModePlayers.contains(CONSOLE_UUID)) sendMessage(prefixNode, debugPrefix + message);
+
         // player
         for (UUID uuid : debugModePlayers) {
             if (uuid.equals(CONSOLE_UUID)) continue;
             Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline()) sendMessage(player, "§eDEBUG: §7" + message);
+            if (player != null && player.isOnline()) sendMessage(player, prefixNode, debugPrefix + message);
         }
     }
 
     public void sendMessage(String message) {
-        sendMessage("Prefix.Default", message);
+        sendMessage("Default", message);
     }
-    public void sendMessage(String prefix, String message) {
+
+    public void sendMessage(String prefixNode, String message) {
         if (message == null) return;
-        Bukkit.getConsoleSender().sendMessage(lang.get(prefix) + message);
+
+        String prefix = prefixNode.equals("none") ? "" : lang.get("Prefix." + prefixNode);
+        Bukkit.getConsoleSender().sendMessage(TextUtil.parse(prefix + message));
     }
 
     public void sendMessage(Player player, String message) {
         sendMessage(player, "Default", message);
     }
-    public void sendMessage(Player player, String prefix, String message) {
+    
+    public void sendMessage(Player player, String prefixNode, String message) {
         if (player == null || message == null) return;
-        player.sendMessage(lang.get("Prefix." + prefix) + message);
+
+        String prefix = prefixNode.equals("none") ? "" : lang.get("Prefix." + prefixNode);
+        player.sendMessage(TextUtil.parse(prefix + message));
     }
 
     public DatabaseUtil getDatabaseUtil() { return databaseUtil; }
     public ConfigManager getLanguageManager() { return lang; }
     public FeatureManager getFeatureManager() { return featureManager; }
+    public CommandManager getCommandManager() { return commandManager; }
+    public AliasCommand getAliasCommand() { return aliasCommand; }
 }

@@ -72,10 +72,7 @@ public class BedrockGlideElytra implements Feature {
             virtualDamageable.setDamage(sourceDamageable.getDamage());
         }
 
-        virtualMeta.displayName(Component.text("虛擬鞘翅")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .decoration(TextDecoration.ITALIC, false));
+        virtualMeta.displayName(Component.text("&6&l虛擬鞘翅").decoration(TextDecoration.ITALIC, false));
         virtualMeta.lore(buildLore(source, sourceMeta));
         virtualElytra.setItemMeta(virtualMeta);
         return virtualElytra;
@@ -87,8 +84,20 @@ public class BedrockGlideElytra implements Feature {
                 : new ArrayList<>();
 
         if (!lore.isEmpty()) lore.add(Component.empty());
-        lore.add(Component.text("由「" + source.slotDisplayName() + "」上的 glide 組件觸發", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("脫下該裝備即可取下此虛擬鞘翅", NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text()
+            .append(Component.text("由 "))
+            .append(Component.translatable(source.slotTranslationKey()))
+            .append(Component.text(" 上的鞘翅效果觸發"))
+            .color(NamedTextColor.GRAY)
+            .decoration(TextDecoration.ITALIC, false)
+            .build());
+        lore.add(Component.text()
+            .append(Component.text("脫下 "))
+            .append(Component.translatable(source.slotTranslationKey()))
+            .append(Component.text(" 即可取下此虛擬鞘翅"))
+            .color(NamedTextColor.GRAY)
+            .decoration(TextDecoration.ITALIC, false)
+            .build());
 
         if (sourceMeta instanceof Damageable damageable) {
             int max = source.item().getType().getMaxDurability();
@@ -105,23 +114,23 @@ public class BedrockGlideElytra implements Feature {
     private GlideSource findGlideSource(Player player) {
         if (player == null) return null;
         ItemStack chest = player.getInventory().getChestplate();
-        if (hasGliderComponent(chest)) return new GlideSource(chest, "胸甲");
+        if (hasGliderComponent(chest)) return new GlideSource(chest, "item.modifiers.chest");
 
         ItemStack leggings = player.getInventory().getLeggings();
-        if (hasGliderComponent(leggings)) return new GlideSource(leggings, "護腿");
+        if (hasGliderComponent(leggings)) return new GlideSource(leggings, "item.modifiers.legs");
 
         ItemStack boots = player.getInventory().getBoots();
-        if (hasGliderComponent(boots)) return new GlideSource(boots, "靴子");
+        if (hasGliderComponent(boots)) return new GlideSource(boots, "item.modifiers.feet");
 
         ItemStack helmet = player.getInventory().getHelmet();
-        if (hasGliderComponent(helmet)) return new GlideSource(helmet, "頭盔");
+        if (hasGliderComponent(helmet)) return new GlideSource(helmet, "item.modifiers.head");
 
         return null;
     }
 
     private boolean hasGliderComponent(ItemStack item) {
-        return item != null && item.getType() != Material.AIR && item.hasData(DataComponentTypes.GLIDER);
+        return item != null && !item.getType().isAir() && item.hasData(DataComponentTypes.GLIDER) && item.getType() != Material.ELYTRA;
     }
 
-    private record GlideSource(ItemStack item, String slotDisplayName) {}
+    private record GlideSource(ItemStack item, String slotTranslationKey) {}
 }

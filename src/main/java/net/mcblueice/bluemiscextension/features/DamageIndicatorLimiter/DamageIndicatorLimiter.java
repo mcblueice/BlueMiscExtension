@@ -17,15 +17,17 @@ import net.mcblueice.bluemiscextension.features.Feature;
 
 public class DamageIndicatorLimiter implements Feature {
 	private final BlueMiscExtension plugin;
+    private final ProtocolManager protocolManager;
+    private PacketAdapter damageIndicatorLimiterListener;
 
 	public DamageIndicatorLimiter(BlueMiscExtension plugin) {
 		this.plugin = plugin;
+        this.protocolManager = ProtocolLibrary.getProtocolManager();
 	}
 
     @Override
     public void register() {
-        ProtocolManager manager = ProtocolLibrary.getProtocolManager();
-        manager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL,PacketType.Play.Server.WORLD_PARTICLES) {
+        protocolManager.addPacketListener(damageIndicatorLimiterListener = new PacketAdapter(plugin, ListenerPriority.NORMAL,PacketType.Play.Server.WORLD_PARTICLES) {
             int maxParticles = plugin.getConfig().getInt("Features.DamageIndicatorLimiter.max_amount", 20);
 
             @Override
@@ -46,5 +48,5 @@ public class DamageIndicatorLimiter implements Feature {
     }
     
     @Override
-    public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
+    public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListener(damageIndicatorLimiterListener); }
 }

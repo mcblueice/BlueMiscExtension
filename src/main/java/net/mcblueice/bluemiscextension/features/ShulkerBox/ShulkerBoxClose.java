@@ -21,7 +21,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ShulkerBox.ShulkerBox.ShulkerBoxHolder;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 
 public class ShulkerBoxClose implements Listener {
     private final BlueMiscExtension plugin;

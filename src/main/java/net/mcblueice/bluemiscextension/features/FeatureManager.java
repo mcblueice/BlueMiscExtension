@@ -13,7 +13,9 @@ import net.mcblueice.bluemiscextension.features.DamageIndicatorLimiter.DamageInd
 import net.mcblueice.bluemiscextension.features.AbsorptionScale.AbsorptionScale;
 import net.mcblueice.bluemiscextension.features.Elevator.Elevator;
 import net.mcblueice.bluemiscextension.features.LightBlock.LightBlock;
+import net.mcblueice.bluemiscextension.features.ItemSignature.ItemSignature;
 import net.mcblueice.bluemiscextension.features.PlaceholderAPI.PlaceholderFeature;
+import net.mcblueice.bluemiscextension.features.PlayerNick.PlayerNick;
 import net.mcblueice.bluemiscextension.features.VirtualWorkbench.VirtualWorkbench;
 import net.mcblueice.bluemiscextension.features.BedrockGlideElytra.BedrockGlideElytra;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
@@ -39,6 +41,8 @@ public class FeatureManager {
         loadFeature("LightBlock", LightBlock::new);
         loadFeature("VirtualWorkbench", VirtualWorkbench::new);
         loadFeature("BedrockGlideElytra", new String[]{"ProtocolLib", "Floodgate"}, BedrockGlideElytra::new);
+        loadFeature("PlayerNick", PlayerNick::new);
+        loadFeature("ItemSignature", ItemSignature::new);
         loadFeature("PlaceholderAPI", "PlaceholderAPI", PlaceholderFeature::new);
     }
 
@@ -51,6 +55,14 @@ public class FeatureManager {
 
     public boolean isFeatureEnabled(Class<? extends Feature> featureClass) {
         return getFeature(featureClass) != null;
+    }
+
+    public boolean isFeatureEnabled(String featureName) {
+        if (featureName == null || featureName.isBlank()) return false;
+        for (Feature feature : activeFeatures) {
+            if (feature.getClass().getSimpleName().equalsIgnoreCase(featureName)) return true;
+        }
+        return false;
     }
 
     public <T extends Feature> T getFeature(Class<T> featureClass) {
@@ -99,5 +111,9 @@ public class FeatureManager {
             Bukkit.getConsoleSender().sendMessage("[BlueMiscExtension]" + lang.get("FeatureManager.Closed", displayName));
         }
         return null;
+    }
+
+    public List<Feature> getActiveFeatures() {
+        return java.util.Collections.unmodifiableList(activeFeatures);
     }
 }

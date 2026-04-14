@@ -12,7 +12,7 @@ import org.bukkit.inventory.PlayerInventory;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 
 public class InventoryClickListener implements Listener {
     private final BlueMiscExtension plugin;

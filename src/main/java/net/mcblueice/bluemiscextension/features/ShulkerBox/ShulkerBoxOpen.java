@@ -22,7 +22,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import net.kyori.adventure.text.Component;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ShulkerBox.ShulkerBox.ShulkerBoxHolder;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 
 public class ShulkerBoxOpen implements Listener {
     private final BlueMiscExtension plugin;

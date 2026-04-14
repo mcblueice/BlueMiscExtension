@@ -20,23 +20,23 @@ import com.comphenix.protocol.wrappers.WrappedDataValue;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.Feature;
 import net.mcblueice.bluemiscextension.features.FeatureManager;
-import net.mcblueice.bluemiscextension.utils.ServerUtil;
+import net.mcblueice.bluelib.utils.ServerUtil;
 
 public class AbsorptionScale implements Listener, Feature {
-
 	private final BlueMiscExtension plugin;
+	private final ProtocolManager protocolManager;
+	private PacketAdapter absorptionScaleListener;
 	private final Map<UUID, Float> peakAbsorption = new ConcurrentHashMap<>();
 	private final Map<UUID, Float> lastDisplayed = new ConcurrentHashMap<>();
 
 	public AbsorptionScale(BlueMiscExtension plugin) {
 		this.plugin = plugin;
+		this.protocolManager = ProtocolLibrary.getProtocolManager();
 	}
 
 	@Override
 	public void register() {
-		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
-
-		manager.addPacketListener(new PacketAdapter(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.ENTITY_METADATA) {
+		protocolManager.addPacketListener(absorptionScaleListener = new PacketAdapter(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.ENTITY_METADATA) {
 			float maxAbsorption = (float) plugin.getConfig().getDouble("Features.AbsorptionScale.max_amount", 20D);
 
 			@Override
@@ -52,7 +52,7 @@ public class AbsorptionScale implements Listener, Feature {
 
 				List<WrappedDataValue> dataList = packet.getDataValueCollectionModifier().readSafely(0);
 				if (dataList == null || dataList.isEmpty()) return;
-				int index = ServerUtil.getAbsorptionIndex();
+				int index = ServerUtil.isAtLeast(1, 21, 11) ? 17 : 15;
 				
 				WrappedDataValue packetData = null;
 				for (WrappedDataValue data : dataList) {
@@ -109,10 +109,11 @@ public class AbsorptionScale implements Listener, Feature {
 		AbsorptionScale absorptionScale = featureManager.getFeature(AbsorptionScale.class);
 		if (absorptionScale == null) return 0F;
 		Player player = plugin.getServer().getPlayer(uuid);
+		if (player == null) return 0F;
 		Float absorption = (float) player.getAbsorptionAmount();
 		return absorption != null ? absorption : 0F;
 	}
 
     @Override
-    public void unregister() { ProtocolLibrary.getProtocolManager().removePacketListeners(plugin); }
+    public void unregister() { protocolManager.removePacketListener(absorptionScaleListener); }
 }

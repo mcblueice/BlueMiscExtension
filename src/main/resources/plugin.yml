@@ -2,6 +2,8 @@ name: BlueMiscExtension
 version: '${project.version}'
 main: net.mcblueice.bluemiscextension.BlueMiscExtension
 api-version: 1.21.11
+depend:
+  - BlueLib
 softdepend:
   - ProtocolLib
   - PlaceholderAPI
@@ -12,7 +14,7 @@ description: 雜項擴展
 commands:
   bluemiscextension:
     description: BlueMiscExtension主指令
-    usage: /bluemiscextension <reload|debug|workbench|armorhide|status>
+    usage: /bluemiscextension <reload|debug|workbench|armorhide|status|sign>
     aliases: [bme]
 
 permissions:
@@ -63,4 +65,22 @@ permissions:
     default: op
   bluemiscextension.lightblock:
     description: 允許生存模式使用光源方塊
+    default: op
+  bluemiscextension.nick:
+    description: 允許使用 /bluemiscextension nick 指令
+    default: op
+  bluemiscextension.nick.other:
+    description: 允許使用 /bluemiscextension nick <player> 指令
+    default: op
+  bluemiscextension.nick.basiccolor:
+    description: 允許使用基本顏色作為暱稱顏色
+    default: op
+  bluemiscextension.nick.hexcolor:
+    description: 允許使用十六進制顏色作為暱稱顏色
+    default: op
+  bluemiscextension.itemsign:
+    description: 允許使用 /bluemiscextension sign 為手上物品署名
+    default: op
+  bluemiscextension.itemsign.override:
+    description: 允許覆寫或略過他人署名限制
     default: op

@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-
+import net.mcblueice.bluelib.utils.ServerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -12,60 +12,28 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 
 import com.sun.management.OperatingSystemMXBean;
 
-public class ServerUtil {
-
-    public static final boolean isFolia = checkFolia();
-    public static final String mcVersion = getMCVersion();
-    public static final int majorVersion = getMCVersionParts(0);
-    public static final int minorVersion = getMCVersionParts(1);
-    public static final int patchVersion = getMCVersionParts(2);
+public class StatusUtil {
 
     private static final DecimalFormat df = new DecimalFormat("#.##");
 
-    private ServerUtil() {
+    private StatusUtil() {
         throw new IllegalStateException("Utility class should not be instantiated");
-    }
-
-    private static boolean checkFolia() {
-        try {
-            Bukkit.class.getMethod("getRegionTPS", Location.class);
-            return true;
-        } catch (Throwable e) {
-            return false;
-        }
     }
 
     public static String getMCVersion() {
         String version = Bukkit.getBukkitVersion();
         return version.split("-")[0];
     }
-    public static int getMCVersionParts(int index) {
-        String version = Bukkit.getBukkitVersion();
-        String[] parts = version.split("-")[0].split("\\.");
-        if (index >= parts.length) return 0;
-        return Integer.parseInt(parts[index]);
-    }
-
-    public static boolean isNewAttributeKey() {
-        return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 7);
-    }
-    public static int getAbsorptionIndex() {
-        return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 11) ? 17 : 15;
-    }
-    public static boolean isNewParticle() {
-        return (majorVersion >= 26) || (minorVersion == 21 && patchVersion >= 10);
-    }
 
     public static Component getServerStatus(CommandSender sender) {
         TextComponent.Builder builder = Component.text();
 
         builder.append(Component.text("§8§m---------§r§a伺服器狀態§8§m---------\n"));
-        builder.append(Component.text("§6核心類型: " + (isFolia ? "§bFolia" : "§ePaper/Spigot") + " §e" +getMCVersion() + "\n"));
+        builder.append(Component.text("§6核心類型: " + (ServerUtil.IS_FOLIA ? "§bFolia" : "§ePaper/Spigot") + " §e" + getMCVersion() + "\n"));
         builder.append(Component.text("§6Bukkit版本: §e" + Bukkit.getBukkitVersion() + "\n"));
 
         OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
@@ -85,7 +53,13 @@ public class ServerUtil {
 
         builder.append(Component.text("§8§m----------§r§5全域數據§8§m----------\n"));
         
-        double[] tps = Bukkit.getTPS();
+        double[] tps;
+        try {
+            tps = Bukkit.getTPS();
+        } catch (UnsupportedOperationException e) {
+            tps = new double[]{20.0, 20.0, 20.0};
+        }
+        
         builder.append(Component.text("§6TPS: " + formatTPS(tps[0]) + "§7, " + formatTPS(tps[1]) + "§7, " + formatTPS(tps[2]) + "\n"));
 
         int totalChunks = 0;
@@ -150,26 +124,5 @@ public class ServerUtil {
         if (mspt <= 100) return "§c" + msptStr;
         return "§4" + msptStr;
     }
-
-
-    public static double getTPS() {
-        double[] tpsArray = Bukkit.getTPS();
-        return Math.min(tpsArray[0], 20);
-    }
-
-    public static double getMSPT() {
-        return isFolia ? Bukkit.getAverageTickTime() : 0.0;
-    }
-
-    public static double getRegionTPS(Location location) {
-        if (!isFolia) return 0;
-        try {
-            Method method = Bukkit.class.getMethod("getRegionTPS", Location.class);
-            double[] tpsArray = (double[]) method.invoke(null, location);
-            return Math.min(tpsArray[0], 20);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
 }
+

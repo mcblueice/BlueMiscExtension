@@ -43,6 +43,13 @@ Features:
   BedrockGlideElytra:
     enable: true
     debug: false
+  PlayerNick:
+    enable: true
+    debug: false
+    max_display_name_length: 16
+  ItemSignature:
+    enable: true
+    debug: false
   PlaceholderAPI:
     enable: true
     debug: false

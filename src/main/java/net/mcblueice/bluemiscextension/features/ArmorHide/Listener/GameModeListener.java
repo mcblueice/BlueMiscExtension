@@ -7,7 +7,7 @@ import org.bukkit.event.player.PlayerGameModeChangeEvent;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
-import net.mcblueice.bluemiscextension.utils.TaskScheduler;
+import net.mcblueice.bluelib.utils.TaskScheduler;
 
 public class GameModeListener implements Listener {
     private final BlueMiscExtension plugin;

@@ -11,6 +11,7 @@ ReloadSuccess: "&aConfig已重新加載"
 DebugEnabled: "&6Debug模式&a已開啟"
 DebugDisabled: "&6Debug模式&c已關閉"
 ForceUnlockData: "&e已強制解鎖玩家數據: &6%{1}"
+PlayerDataNotLoaded: "&c玩家數據尚未加載完成 請稍後再試!"
 
 # 功能管理器
 FeatureManager:
@@ -31,6 +32,8 @@ FeatureName:
   LightBlock: "光源方塊"
   VirtualWorkbench: "虛擬工作站"
   BedrockGlideElytra: "基岩版虛擬鞘翅"
+  PlayerNick: "玩家暱稱"
+  ItemSignature: "物品署名"
   PlaceholderAPI: "佔位符"
 
 # 虛擬工作站
@@ -53,3 +56,26 @@ ArmorHideFeature:
   ToggleOff: "&6裝備隱形功能已&c關閉"
   ToggleOnOther: "&6已為 %{1} 啟用裝備隱形功能"
   ToggleOffOther: "&6已為 %{1} 關閉裝備隱形功能"
+
+# 玩家暱稱
+PlayerNick:
+  ClearSelf: "&a已清除你的暱稱!"
+  ClearOther: "&a已清除 &e%{1} &a的暱稱!"
+  ClearByOther: "&a管理員已清除你的暱稱!"
+  RawInputTooLong: "&c輸入的字串太長了 請限制在 200 個字以內!"
+  InvalidInput: "&c請輸入有效的暱稱字元!"
+  NickTooLong: "&c輸入的暱稱太長了 請限制在 %{1} 個字以內!"
+  SetSelf: "&a你的暱稱已更改為: &r%{1}"
+  SetOther: "&a已將 &e%{1} &a的暱稱更改為: &r%{2}"
+  SetByOther: "&a你的暱稱已更改為: &r%{1}"
+
+# 物品署名
+ItemSignature:
+  NoItemInHand: "&c你的主手沒有可署名的物品!"
+  UnsupportedItem: "&c此物品無法被署名!"
+  NotOwner: "&c你無法修改別人署名的物品 原署名者: &e%{1}"
+  MapCopyBlocked: "&c你無法複製這張地圖 署名者是: &e%{1}"
+  AnvilRenameBlocked: "&c你無法修改這個物品的名字!"
+  SignedSuccess: "&a已完成物品署名!"
+  UnsignedSuccess: "&a已解除該物品的署名!"
+  SignedLore: "&7&l由 &b&l%{1} &7&l署名的物品"
