@@ -34,6 +34,8 @@ FeatureName:
   BedrockGlideElytra: "基岩版虛擬鞘翅"
   PlayerNick: "玩家暱稱"
   ItemSignature: "物品署名"
+  PortalLoaderBreaker: "傳送門載入器破壞"
+  ElytraArmor: "鞘翅盔甲"
   PlaceholderAPI: "佔位符"
 
 # 虛擬工作站
@@ -57,6 +59,14 @@ ArmorHideFeature:
   ToggleOnOther: "&6已為 %{1} 啟用裝備隱形功能"
   ToggleOffOther: "&6已為 %{1} 關閉裝備隱形功能"
 
+# 夜寐生成
+PhantomSpawnLimiter:
+  NotEnabled: "&c夜寐生成限制功能未啟用!"
+  ToggleOn: "&6已&c關閉&6個人夜寐生成"
+  ToggleOff: "&6已&a開啟&6個人夜寐生成"
+  ToggleOnOther: "&6已為 %{1} 關閉夜寐生成"
+  ToggleOffOther: "&6已為 %{1} 啟用夜寐生成"
+
 # 玩家暱稱
 PlayerNick:
   ClearSelf: "&a已清除你的暱稱!"
@@ -79,3 +89,52 @@ ItemSignature:
   SignedSuccess: "&a已完成物品署名!"
   UnsignedSuccess: "&a已解除該物品的署名!"
   SignedLore: "&7&l由 &b&l%{1} &7&l署名的物品"
+
+# 鞘翅盔甲
+ElytraArmor:
+  ArmorName:
+    LEATHER: "&e皮革鞘翅盔甲"
+    COPPER: "&6銅製鞘翅盔甲"
+    CHAINMAIL: "&7鎖鏈鞘翅盔甲"
+    IRON: "&f鐵製鞘翅盔甲"
+    GOLDEN: "&e黃金鞘翅盔甲"
+    DIAMOND: "&b鑽石鞘翅盔甲"
+    NETHERITE: "&4獄髓鞘翅盔甲"
+    GENERIC: "&9鞘翅盔甲"
+
+# 玩家資訊
+Info:
+  Online: |
+    &8&m======&r &b玩家資訊 &8&m======
+    &7 ▪ &b名稱 &8» &f%{1}
+    &7 ▪ &b顯示名稱 &8» &f%{2}
+    &7 ▪ &bUUID &8» &7%{3}
+    %{4}
+    &7 ▪ &6隱藏盔甲 &8» %{5}
+    &7 ▪ &6主機名 &8» &f%{6}
+    &7 ▪ &6IP &8» &f%{7}
+    %{8}
+    &8&m==========================
+  Offline: |
+    &8&m======&r &b玩家資訊 &8(離線)&8&m======
+    &7 ▪ &b名稱 &8» &f%{1}
+    &7 ▪ &bUUID &8» &7%{2}
+    %{3}
+    &7 ▪ &6隱藏盔甲 &8» %{4}
+    &7 ▪ &6主機名 &8» &f%{5}
+    &7 ▪ &6IP &8» &f%{6}
+    &8&m==========================
+  NicknamePrefix: "&7 ▪ &6暱稱 &8» &r%{1}"
+  HiddenArmorTrue: "&a是"
+  HiddenArmorFalse: "&c否"
+  UnknownHostname: "UnknownHostname"
+  UnknownIp: "UnknownIp"
+  PdcHeader: "&7 ▪ &3附加資料 (PDC) &8»"
+  PdcEmpty: "  &8- &c&o無附加資料"
+  PdcEntry: "  &8- &6%{1}&7: &e%{2}"
+  PdcUnparseable: "無法解析"
+  PdcTypeMismatch: "&c[型別不符]"
+
+# 解鎖資料
+UnlockData:
+  KickMessage: "&6管理員正在修復你的資料 請稍後重新登入"

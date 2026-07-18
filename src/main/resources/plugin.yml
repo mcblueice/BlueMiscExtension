@@ -8,21 +8,32 @@ softdepend:
   - ProtocolLib
   - PlaceholderAPI
   - floodgate
+libraries:
+  - com.zaxxer:HikariCP:7.1.0
 folia-supported: true
 author: Blue
 description: 雜項擴展
 commands:
   bluemiscextension:
     description: BlueMiscExtension主指令
-    usage: /bluemiscextension <reload|debug|workbench|armorhide|status|sign>
+    usage: /bluemiscextension <reload|debug|status|info|unlockdata|workbench|armorhide|sign>
     aliases: [bme]
 
 permissions:
   bluemiscextension.reload:
-    description: 允許使用 /bluemiscextension reload
+    description: 允許使用 /bluemiscextension reload 指令
     default: op
   bluemiscextension.debug:
-    description: 允許使用 /bluemiscextension debug
+    description: 允許使用 /bluemiscextension debug 指令
+    default: op
+  bluemiscextension.status:
+    description: 允許使用 /bluemiscextension status 指令
+    default: op
+  bluemiscextension.info:
+    description: 允許使用 /bluemiscextension info 指令
+    default: op
+  bluemiscextension.unlockdata:
+    description: 允許使用 /bluemiscextension unlockdata 指令
     default: op
   bluemiscextension.workbench:
     description: 允許使用 /bluemiscextension workbench 指令
@@ -57,6 +68,12 @@ permissions:
   bluemiscextension.armorhide.other:
     description: 允許使用 /bluemiscextension armorhide <player> 指令
     default: op
+  bluemiscextension.phantom:
+    description: 允許使用 /bluemiscextension phantom 指令
+    default: op
+  bluemiscextension.phantom.other:
+    description: 允許使用 /bluemiscextension phantom <player> 指令
+    default: op
   bluemiscextension.shulkerbox.open.hand:
     description: 允許玩家以手持方式開啟界伏盒
     default: op
@@ -83,4 +100,7 @@ permissions:
     default: op
   bluemiscextension.itemsign.override:
     description: 允許覆寫或略過他人署名限制
+    default: op
+  bluemiscextension.clickthrough:
+    description: 允許點擊穿過告示牌與展示框
     default: op

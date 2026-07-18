@@ -86,7 +86,7 @@ public class ItemSignature implements Feature {
             }
 
             String signerNameForLore = oldSignerName.isBlank() ? player.getName() : oldSignerName;
-            Component signedLore = TextUtil.parse(lang.get("ItemSignature.SignedLore", signerNameForLore)).decoration(TextDecoration.ITALIC, false);
+            Component signedLore = TextUtil.parse(lang.get("ItemSignature.SignedLore", signerNameForLore), true, false).decoration(TextDecoration.ITALIC, false);
             lore.removeIf(signedLore::equals);
 
             pdc.remove(signerUuidKey);
@@ -103,7 +103,7 @@ public class ItemSignature implements Feature {
         }
 
         if (!oldSignerName.isBlank()) {
-            Component oldSignedLore = TextUtil.parse(lang.get("ItemSignature.SignedLore", oldSignerName)).decoration(TextDecoration.ITALIC, false);
+            Component oldSignedLore = TextUtil.parse(lang.get("ItemSignature.SignedLore", oldSignerName), true, false).decoration(TextDecoration.ITALIC, false);
             lore.removeIf(oldSignedLore::equals);
         }
 
@@ -111,7 +111,7 @@ public class ItemSignature implements Feature {
         pdc.set(signerUuidKey, PersistentDataType.STRING, player.getUniqueId().toString());
         pdc.set(signerNameKey, PersistentDataType.STRING, signerName);
 
-        lore.add(TextUtil.parse(lang.get("ItemSignature.SignedLore", signerName)).decoration(TextDecoration.ITALIC, false));
+        lore.add(TextUtil.parse(lang.get("ItemSignature.SignedLore", signerName), true, false).decoration(TextDecoration.ITALIC, false));
         itemMeta.lore(lore);
         item.setItemMeta(itemMeta);
         player.getInventory().setItemInMainHand(item);

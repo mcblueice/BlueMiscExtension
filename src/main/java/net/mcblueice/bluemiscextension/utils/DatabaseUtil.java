@@ -46,6 +46,7 @@ public class DatabaseUtil {
         UUID uuid,
         String playerName,
         boolean hiddenArmor,
+        boolean phantomSpawn,
         String nickname,
         String hostname,
         String ip
@@ -62,27 +63,31 @@ public class DatabaseUtil {
         }
 
         public static PlayerData defaultData(UUID uuid, String playerName) {
-            return new PlayerData(uuid, playerName, false, "", "UnknownHostname", "UnknownIp");
+            return new PlayerData(uuid, playerName, false, true, "", "UnknownHostname", "UnknownIp");
         }
 
         public PlayerData withPlayerName(String newPlayerName) {
-            return new PlayerData(this.uuid, newPlayerName, this.hiddenArmor, this.nickname, this.hostname, this.ip);
+            return new PlayerData(this.uuid, newPlayerName, this.hiddenArmor, this.phantomSpawn, this.nickname, this.hostname, this.ip);
         }
 
         public PlayerData withHiddenArmor(boolean newHiddenArmor) {
-            return new PlayerData(this.uuid, this.playerName, newHiddenArmor, this.nickname, this.hostname, this.ip);
+            return new PlayerData(this.uuid, this.playerName, newHiddenArmor, this.phantomSpawn, this.nickname, this.hostname, this.ip);
+        }
+
+        public PlayerData withPhantomSpawn(boolean newPhantomSpawn) {
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, newPhantomSpawn, this.nickname, this.hostname, this.ip);
         }
 
         public PlayerData withNickname(String newNickname) {
-            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, newNickname, this.hostname, this.ip);
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.phantomSpawn, newNickname, this.hostname, this.ip);
         }
 
         public PlayerData withHostname(String newHostname) {
-            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.nickname, newHostname, this.ip);
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.phantomSpawn, this.nickname, newHostname, this.ip);
         }
 
         public PlayerData withIp(String newIp) {
-            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.nickname, this.hostname, newIp);
+            return new PlayerData(this.uuid, this.playerName, this.hiddenArmor, this.phantomSpawn, this.nickname, this.hostname, newIp);
         }
     }
 
@@ -149,6 +154,7 @@ public class DatabaseUtil {
                     "uuid CHAR(36) PRIMARY KEY, " +
                     "player_name VARCHAR(32) NOT NULL, " +
                     "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
+                    "phantom_spawn BOOLEAN NOT NULL DEFAULT 1, " +
                     "nickname VARCHAR(255) NOT NULL DEFAULT '', " +
                     "hostname VARCHAR(255) NOT NULL DEFAULT '', " +
                     "ip_address VARCHAR(45) NOT NULL DEFAULT '', " +
@@ -160,6 +166,7 @@ public class DatabaseUtil {
                     "uuid CHAR(36) PRIMARY KEY, " +
                     "player_name TEXT NOT NULL, " +
                     "hidden_armor BOOLEAN NOT NULL DEFAULT 0, " +
+                    "phantom_spawn BOOLEAN NOT NULL DEFAULT 1, " +
                     "nickname TEXT NOT NULL DEFAULT '', " +
                     "hostname TEXT NOT NULL DEFAULT '', " +
                     "ip_address TEXT NOT NULL DEFAULT '', " +
@@ -178,6 +185,7 @@ public class DatabaseUtil {
             case "mysql":
                 ensureColumnExists("player_data", "player_name", "VARCHAR(32) NOT NULL");
                 ensureColumnExists("player_data", "hidden_armor", "BOOLEAN NOT NULL DEFAULT 0");
+                ensureColumnExists("player_data", "phantom_spawn", "BOOLEAN NOT NULL DEFAULT 1");
                 ensureColumnExists("player_data", "nickname", "VARCHAR(255) NOT NULL DEFAULT ''");
                 ensureColumnExists("player_data", "hostname", "VARCHAR(255) NOT NULL DEFAULT ''");
                 ensureColumnExists("player_data", "ip_address", "VARCHAR(45) NOT NULL DEFAULT ''");
@@ -186,6 +194,7 @@ public class DatabaseUtil {
             case "sqlite":
                 ensureColumnExists("player_data", "player_name", "TEXT NOT NULL");
                 ensureColumnExists("player_data", "hidden_armor", "BOOLEAN NOT NULL DEFAULT 0");
+                ensureColumnExists("player_data", "phantom_spawn", "BOOLEAN NOT NULL DEFAULT 1");
                 ensureColumnExists("player_data", "nickname", "TEXT NOT NULL DEFAULT ''");
                 ensureColumnExists("player_data", "hostname", "TEXT NOT NULL DEFAULT ''");
                 ensureColumnExists("player_data", "ip_address", "TEXT NOT NULL DEFAULT ''");
@@ -272,6 +281,7 @@ public class DatabaseUtil {
             PlayerData playerData = playerDataCache.get(uuid);
             if (playerData != null) {
                 updates.put("hidden_armor", playerData.hiddenArmor());
+                updates.put("phantom_spawn", playerData.phantomSpawn());
                 updates.put("nickname", playerData.nickname());
                 updates.put("hostname", playerData.hostname());
                 updates.put("ip_address", playerData.ip());
@@ -281,11 +291,12 @@ public class DatabaseUtil {
 
             executeUpdate(connection, uuid, updates);
 
-            if (removeCacheAndUnlock && debug) plugin.sendDebug("資料已儲存並解鎖: " + uuid);
+            if (removeCacheAndUnlock) {
+                clearCache(uuid);
+                if (debug) plugin.sendDebug("資料已儲存並解鎖: " + uuid);
+            }
         } catch (SQLException e) {
             throw e;
-        } finally {
-            if (removeCacheAndUnlock) clearCache(uuid);
         }
     }
 
@@ -347,7 +358,8 @@ public class DatabaseUtil {
                         }
 
                         if (isDataLocked) {
-                                String sql = "SELECT player_name, hidden_armor, nickname, hostname, ip_address FROM player_data WHERE uuid = ?";                            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                            String sql = "SELECT player_name, hidden_armor, phantom_spawn, nickname, hostname, ip_address FROM player_data WHERE uuid = ?";
+                            try (PreparedStatement ps = connection.prepareStatement(sql)) {
                                 ps.setString(1, uuid.toString());
                                 try (ResultSet rs = ps.executeQuery()) {
                                     if (rs.next()) {
@@ -355,6 +367,7 @@ public class DatabaseUtil {
                                             uuid,
                                             rs.getString("player_name"),
                                             rs.getBoolean("hidden_armor"),
+                                            rs.getBoolean("phantom_spawn"),
                                             rs.getString("nickname"),
                                             rs.getString("hostname"),
                                             rs.getString("ip_address")
@@ -551,10 +564,82 @@ public class DatabaseUtil {
         return PlayerData.defaultData(uuid, fallbackName);
     }
 
+    public CompletableFuture<PlayerData> getOfflinePlayerData(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (uuid == null) return null;
+            if (dataSource == null || dataSource.isClosed()) return null;
+
+            String sql = "SELECT player_name, hidden_armor, phantom_spawn, nickname, hostname, ip_address FROM player_data WHERE uuid = ?";
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, uuid.toString());
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String playerName = rs.getString("player_name");
+                        Boolean hiddenArmor = rs.getBoolean("hidden_armor");
+                        Boolean phantomSpawn = rs.getBoolean("phantom_spawn");
+                        String nickname = rs.getString("nickname");
+                        String hostname = rs.getString("hostname");
+                        String ip_address = rs.getString("ip_address");
+                        return new PlayerData(uuid, playerName, hiddenArmor, phantomSpawn, nickname, hostname, ip_address);
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to lookup player data by UUID [" + uuid + "]: " + e.getMessage());
+            }
+            return null;
+        }, runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
+    public CompletableFuture<PlayerData> getOfflinePlayerData(String playerName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (playerName == null || playerName.isEmpty()) return null;
+            if (dataSource == null || dataSource.isClosed()) return null;
+
+            String sql = "SELECT uuid, hidden_armor, phantom_spawn, nickname, hostname, ip_address FROM player_data WHERE player_name = ?";
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, playerName);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String uuidStr = rs.getString("uuid");
+                        Boolean hiddenArmor = rs.getBoolean("hidden_armor");
+                        Boolean phantomSpawn = rs.getBoolean("phantom_spawn");
+                        String nickname = rs.getString("nickname");
+                        String hostname = rs.getString("hostname");
+                        String ip_address = rs.getString("ip_address");
+                        if (uuidStr != null && !uuidStr.isEmpty()) {
+                            try {
+                                return new PlayerData(UUID.fromString(uuidStr), playerName, hiddenArmor, phantomSpawn, nickname, hostname, ip_address);
+                            } catch (IllegalArgumentException e) {
+                                plugin.getLogger().warning("Database corruption: Invalid UUID format for player " + playerName + ": " + uuidStr);
+                            }
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to lookup UUID by name [" + playerName + "]: " + e.getMessage());
+            }
+            return null;
+        }, runnable -> TaskScheduler.runAsync(plugin, runnable));
+    }
+
     public CompletableFuture<Void> setArmorHiddenState(UUID uuid, boolean state) {
         if (!playerDataCache.containsKey(uuid)) return CompletableFuture.completedFuture(null);
         playerDataCache.computeIfPresent(uuid, (k, data) -> data.withHiddenArmor(state));
         if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "hidden_armor", state);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    public CompletableFuture<Void> setPhantomSpawnState(UUID uuid, boolean state) {
+        if (!playerDataCache.containsKey(uuid)) return CompletableFuture.completedFuture(null);
+        playerDataCache.computeIfPresent(uuid, (k, data) -> data.withPhantomSpawn(state));
+        if (plugin.getConfig().getBoolean("Database.SyncWrite", true)) return updateDatabaseField(uuid, "phantom_spawn", state);
         return CompletableFuture.completedFuture(null);
     }
 

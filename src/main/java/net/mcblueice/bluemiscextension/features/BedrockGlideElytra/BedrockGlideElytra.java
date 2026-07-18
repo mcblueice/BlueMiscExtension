@@ -72,7 +72,7 @@ public class BedrockGlideElytra implements Feature {
             virtualDamageable.setDamage(sourceDamageable.getDamage());
         }
 
-        virtualMeta.displayName(Component.text("&6&l虛擬鞘翅").decoration(TextDecoration.ITALIC, false));
+        virtualMeta.displayName(Component.text("虛擬鞘翅").color(NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
         virtualMeta.lore(buildLore(source, sourceMeta));
         virtualElytra.setItemMeta(virtualMeta);
         return virtualElytra;

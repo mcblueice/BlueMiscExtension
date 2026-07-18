@@ -21,8 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.Feature;
 
-public class LightBlock implements Listener, Feature {
-
+public class LightBlock implements Feature, Listener {
     private final BlueMiscExtension plugin;
 
     public LightBlock(BlueMiscExtension plugin) {
@@ -42,7 +41,7 @@ public class LightBlock implements Listener, Feature {
     @EventHandler
     public void displayLightBlock(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        
+
         if (!player.hasPermission("bluemiscextension.lightblock")) return;
         if (player.getGameMode() == GameMode.CREATIVE) return;
         if (player.getInventory().getItemInMainHand().getType() != Material.LIGHT) return;

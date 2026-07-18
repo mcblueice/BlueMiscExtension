@@ -135,7 +135,7 @@ public class ItemSignatureListener implements Listener {
     private void notifyMapCopyBlocked(Player player, String signerName) {
         TaskScheduler.runTask(player, plugin, () -> {
             String message = lang.get("Prefix.Default") + lang.get("ItemSignature.MapCopyBlocked", signerName);
-            player.sendMessage(TextUtil.parse(message));
+            player.sendMessage(TextUtil.parse(message, true, false));
             player.updateInventory();
         });
     }
@@ -143,7 +143,7 @@ public class ItemSignatureListener implements Listener {
     private void notifyAnvilRenameBlocked(Player player) {
         TaskScheduler.runTask(player, plugin, () -> {
             String message = lang.get("Prefix.Default") + lang.get("ItemSignature.AnvilRenameBlocked");
-            player.sendMessage(TextUtil.parse(message));
+            player.sendMessage(TextUtil.parse(message, true, false));
             player.updateInventory();
         });
     }

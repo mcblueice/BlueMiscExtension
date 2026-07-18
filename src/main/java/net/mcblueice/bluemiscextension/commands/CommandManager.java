@@ -13,6 +13,11 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.util.StringUtil;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.commands.subcommands.DebugCommand;
+import net.mcblueice.bluemiscextension.commands.subcommands.InfoCommand;
+import net.mcblueice.bluemiscextension.commands.subcommands.ReloadCommand;
+import net.mcblueice.bluemiscextension.commands.subcommands.StatusCommand;
+import net.mcblueice.bluemiscextension.commands.subcommands.UnlockDataCommand;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 
 public class CommandManager implements CommandExecutor, TabCompleter {
@@ -25,11 +30,11 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     public CommandManager(BlueMiscExtension plugin) {
         this.lang = plugin.getLanguageManager();
 
-        SubCommand mainCmd = new MainCommand(plugin, this);
-        this.register(mainCmd, "bluemiscextension.reload", new String[]{"reload"});
-        this.register(mainCmd, "bluemiscextension.debug", new String[]{"debug"});
-        this.register(mainCmd, "bluemiscextension.status", new String[]{"status"});
-        this.register(mainCmd, "bluemiscextension.unlockdata", new String[]{"unlockdata"});
+        this.register(new ReloadCommand(plugin, this), "bluemiscextension.reload", new String[]{"reload"});
+        this.register(new DebugCommand(plugin, this), "bluemiscextension.debug", new String[]{"debug"});
+        this.register(new StatusCommand(plugin, this), "bluemiscextension.status", new String[]{"status"});
+        this.register(new UnlockDataCommand(plugin, this), "bluemiscextension.unlockdata", new String[]{"unlockdata"});
+        this.register(new InfoCommand(plugin, this), "bluemiscextension.info", new String[]{"info"});
     }
 
     public void register(SubCommand subCommand, String permission, String[] names) {

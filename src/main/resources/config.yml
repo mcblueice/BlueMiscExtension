@@ -50,6 +50,19 @@ Features:
   ItemSignature:
     enable: true
     debug: false
+  PortalLoaderBreaker:
+    enable: true
+    debug: false
+    DelayTime: 180000 #延遲時間 單位毫秒
+  PhantomSpawnLimiter:
+    enable: true
+    debug: false
+  ElytraArmor:
+    enable: true
+    debug: false
+  ClickThrough:
+    enable: true
+    debug: false
   PlaceholderAPI:
     enable: true
     debug: false

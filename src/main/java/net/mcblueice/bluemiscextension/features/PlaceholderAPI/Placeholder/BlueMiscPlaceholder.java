@@ -53,6 +53,8 @@ public final class BlueMiscPlaceholder extends PlaceholderExpansion {
         switch (key) {
             case "armorhidden":
                 return playerData.hiddenArmor() ? "true" : "false";
+            case "phantomspawn":
+                return playerData.phantomSpawn() ? "true" : "false";
             case "hasnickname":
                 return playerData.nickname().isEmpty() ? "false" : "true";
             case "nickname":

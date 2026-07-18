@@ -73,6 +73,7 @@ public final class ArmorHideUtil {
                 newMaterial = Material.OAK_BUTTON;
                 break;
         }
+
         // glider
         if (item.hasData(DataComponentTypes.GLIDER)) newMaterial = Material.ELYTRA;
         ItemStack newItem = new ItemStack(newMaterial);

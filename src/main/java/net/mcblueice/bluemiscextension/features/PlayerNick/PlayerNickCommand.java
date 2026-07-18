@@ -60,10 +60,10 @@ public class PlayerNickCommand implements SubCommand {
             playerNick.setPlayerNick(target, "");
 
             if (sender.equals(target)) {
-                sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.ClearSelf"));
+                sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.ClearSelf")));
             } else {
-                sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.ClearOther", target.getName()));
-                target.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.ClearByOther"));
+                sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.ClearOther", target.getName())));
+                target.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.ClearByOther")));
             }
             return true;
         }
@@ -72,25 +72,28 @@ public class PlayerNickCommand implements SubCommand {
         boolean hasHexPerm = sender.hasPermission("bluemiscextension.nick.hexcolor");
 
         if (rawInput.length() > 200) {
-            sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.RawInputTooLong"));
+            sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.RawInputTooLong")));
             return true;
         }
 
-        if (!hasBasicPerm && !hasHexPerm) {
-            rawInput = TextUtil.parseToString(rawInput, false, false);
-        } else if (!hasHexPerm) {
+        if (hasHexPerm) {
+            rawInput = TextUtil.parseToString(rawInput, true, false);
+        } else if (hasBasicPerm) {
             rawInput = HEX_COLOR_PATTERN.matcher(rawInput).replaceAll("");
+            rawInput = TextUtil.parseToString(rawInput, true, false);
+        } else {
+            rawInput = TextUtil.parseToString(rawInput, false, false);
         }
 
         int realLength = TextUtil.getLength(rawInput);
 
         if (realLength == 0) {
-            sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.InvalidInput"));
+            sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.InvalidInput")));
             return true;
         }
 
-        if (realLength > plugin.getConfig().getInt("PlayerNick.max_display_name_length", 16)) {
-            sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.NickTooLong", String.valueOf(plugin.getConfig().getInt("PlayerNick.max_display_name_length", 16)), String.valueOf(realLength)));
+        if (realLength > plugin.getConfig().getInt("Features.PlayerNick.max_display_name_length", 16)) {
+            sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.NickTooLong", String.valueOf(plugin.getConfig().getInt("Features.PlayerNick.max_display_name_length", 16)), String.valueOf(realLength))));
             return true;
         }
 
@@ -99,10 +102,10 @@ public class PlayerNickCommand implements SubCommand {
         playerNick.setPlayerNick(target, rawInput);
 
         if (sender.equals(target)) {
-            sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.SetSelf", rawInput));
+            sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.SetSelf", rawInput)));
         } else {
-            sender.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.SetOther", target.getName(), rawInput));
-            target.sendMessage(lang.get("Prefix.Default") + lang.get("PlayerNick.SetByOther", rawInput));
+            sender.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.SetOther", target.getName(), rawInput)));
+            target.sendMessage(lang.getComponent("Prefix.Default").append(lang.getComponent("PlayerNick.SetByOther", rawInput)));
         }
         return true;
     }

@@ -14,6 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
+import net.kyori.adventure.text.Component;
 import net.mcblueice.bluelib.utils.TextUtil;
 import net.mcblueice.bluemiscextension.commands.AliasCommand;
 import net.mcblueice.bluemiscextension.commands.CommandManager;
@@ -94,43 +95,59 @@ public class BlueMiscExtension extends JavaPlugin {
     }
 
     public void sendDebug(String message) {
-        sendDebug("Default", message);
+        sendDebug("Default", TextUtil.parse(message, true, true));
     }
     public void sendDebug(String prefixNode, String message) {
+        sendDebug(prefixNode, TextUtil.parse(message, true, true));
+    }
+    public void sendDebug(Component message) {
+        sendDebug("Default", message);
+    }
+    public void sendDebug(String prefixNode, Component message) {
         if (debugModePlayers.isEmpty()) return;
-        String debugPrefix = "&eDEBUG: &7"; 
+
+        Component debugPrefix = TextUtil.parse("&eDEBUG: &7", true, true);
+        Component debugMessage = debugPrefix.append(message);
 
         // console
-        if (debugModePlayers.contains(CONSOLE_UUID)) sendMessage(prefixNode, debugPrefix + message);
+        if (debugModePlayers.contains(CONSOLE_UUID)) sendMessage(prefixNode, debugMessage);
 
         // player
         for (UUID uuid : debugModePlayers) {
             if (uuid.equals(CONSOLE_UUID)) continue;
             Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline()) sendMessage(player, prefixNode, debugPrefix + message);
+            if (player != null && player.isOnline()) sendMessage(player, prefixNode, debugMessage);
         }
     }
 
     public void sendMessage(String message) {
+        sendMessage("Default", TextUtil.parse(message, true, true));
+    }
+    public void sendMessage(String prefixNode, String message) {
+        sendMessage(prefixNode, TextUtil.parse(message, true, true));
+    }
+    public void sendMessage(Player player, String message) {
+        sendMessage(player, "Default", TextUtil.parse(message, true, true));
+    }
+    public void sendMessage(Player player, String prefixNode, String message) {
+        sendMessage(player, prefixNode, TextUtil.parse(message, true, true));
+    }
+
+    public void sendMessage(Component message) {
         sendMessage("Default", message);
     }
-
-    public void sendMessage(String prefixNode, String message) {
+    public void sendMessage(String prefixNode, Component message) {
         if (message == null) return;
-
-        String prefix = prefixNode.equals("none") ? "" : lang.get("Prefix." + prefixNode);
-        Bukkit.getConsoleSender().sendMessage(TextUtil.parse(prefix + message));
+        Component prefixComp = prefixNode.equals("none") ? Component.empty() : TextUtil.parse(lang.get("Prefix." + prefixNode), true, true);  
+        Bukkit.getConsoleSender().sendMessage(prefixComp.append(message));
     }
-
-    public void sendMessage(Player player, String message) {
+    public void sendMessage(Player player, Component message) {
         sendMessage(player, "Default", message);
     }
-    
-    public void sendMessage(Player player, String prefixNode, String message) {
+    public void sendMessage(Player player, String prefixNode, Component message) {
         if (player == null || message == null) return;
-
-        String prefix = prefixNode.equals("none") ? "" : lang.get("Prefix." + prefixNode);
-        player.sendMessage(TextUtil.parse(prefix + message));
+        Component prefixComp = prefixNode.equals("none") ? Component.empty() : TextUtil.parse(lang.get("Prefix." + prefixNode), true, true);
+        player.sendMessage(prefixComp.append(message));
     }
 
     public DatabaseUtil getDatabaseUtil() { return databaseUtil; }
