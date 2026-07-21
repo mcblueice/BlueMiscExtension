@@ -37,14 +37,14 @@ public class FeatureManager {
     public void reload() {
         unloadAll();
 
-        loadFeature("DamageIndicatorLimiter", "ProtocolLib", DamageIndicatorLimiter::new);
-        loadFeature("AbsorptionScale", "ProtocolLib", AbsorptionScale::new);
-        loadFeature("ArmorHide", "ProtocolLib", ArmorHide::new);
+        loadFeature("DamageIndicatorLimiter", "packetevents", DamageIndicatorLimiter::new);
+        loadFeature("AbsorptionScale", "packetevents", AbsorptionScale::new);
+        loadFeature("ArmorHide", "packetevents", ArmorHide::new);
         loadFeature("ShulkerBox", ShulkerBox::new);
         loadFeature("Elevator", Elevator::new);
         loadFeature("LightBlock", LightBlock::new);
         loadFeature("VirtualWorkbench", VirtualWorkbench::new);
-        loadFeature("BedrockGlideElytra", new String[]{"ProtocolLib", "Floodgate"}, BedrockGlideElytra::new);
+        loadFeature("BedrockGlideElytra", new String[]{"packetevents", "Floodgate"}, BedrockGlideElytra::new);
         loadFeature("PlayerNick", PlayerNick::new);
         loadFeature("ItemSignature", ItemSignature::new);
         loadFeature("PortalLoaderBreaker", PortalLoaderBreaker::new);

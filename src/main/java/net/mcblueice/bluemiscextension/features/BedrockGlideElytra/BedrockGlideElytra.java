@@ -10,8 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
+import com.github.retrooper.packetevents.PacketEvents;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
@@ -23,12 +22,10 @@ import net.mcblueice.bluemiscextension.features.BedrockGlideElytra.Listener.Pack
 import net.mcblueice.bluemiscextension.features.Feature;
 
 public class BedrockGlideElytra implements Feature {
-    private final ProtocolManager protocolManager;
     private SetSlotListener setSlotListener;
     private WindowItemsListener windowItemsListener;
 
     public BedrockGlideElytra(BlueMiscExtension plugin) {
-        this.protocolManager = ProtocolLibrary.getProtocolManager();
     }
 
     @Override
@@ -36,14 +33,14 @@ public class BedrockGlideElytra implements Feature {
         this.setSlotListener = new SetSlotListener(this);
         this.windowItemsListener = new WindowItemsListener(this);
 
-        protocolManager.addPacketListener(setSlotListener);
-        protocolManager.addPacketListener(windowItemsListener);
+        PacketEvents.getAPI().getEventManager().registerListener(setSlotListener);
+        PacketEvents.getAPI().getEventManager().registerListener(windowItemsListener);
     }
 
     @Override
     public void unregister() {
-        if (setSlotListener != null) protocolManager.removePacketListener(setSlotListener);
-        if (windowItemsListener != null) protocolManager.removePacketListener(windowItemsListener);
+        if (setSlotListener != null) PacketEvents.getAPI().getEventManager().unregisterListener(setSlotListener);
+        if (windowItemsListener != null) PacketEvents.getAPI().getEventManager().unregisterListener(windowItemsListener);
     }
 
     public ItemStack getVirtualElytraForPlayer(Player player) {
@@ -79,21 +76,22 @@ public class BedrockGlideElytra implements Feature {
     }
 
     private List<Component> buildLore(GlideSource source, ItemMeta sourceMeta) {
-        List<Component> lore = (sourceMeta != null && sourceMeta.lore() != null)
-                ? new ArrayList<>(sourceMeta.lore())
-                : new ArrayList<>();
+        List<Component> lore = (sourceMeta != null && sourceMeta.lore() != null) ? new ArrayList<>(sourceMeta.lore()) : new ArrayList<>();
+
+        Component sourceName = Component.text(source.slotTranslationKey);
+        if (sourceMeta.hasCustomName()) sourceName = sourceMeta.displayName();
 
         if (!lore.isEmpty()) lore.add(Component.empty());
         lore.add(Component.text()
             .append(Component.text("由 "))
-            .append(Component.translatable(source.slotTranslationKey()))
+            .append(sourceName)
             .append(Component.text(" 上的鞘翅效果觸發"))
             .color(NamedTextColor.GRAY)
             .decoration(TextDecoration.ITALIC, false)
             .build());
         lore.add(Component.text()
             .append(Component.text("脫下 "))
-            .append(Component.translatable(source.slotTranslationKey()))
+            .append(Component.text(source.slotTranslationKey()))
             .append(Component.text(" 即可取下此虛擬鞘翅"))
             .color(NamedTextColor.GRAY)
             .decoration(TextDecoration.ITALIC, false)
@@ -114,16 +112,16 @@ public class BedrockGlideElytra implements Feature {
     private GlideSource findGlideSource(Player player) {
         if (player == null) return null;
         ItemStack chest = player.getInventory().getChestplate();
-        if (hasGliderComponent(chest)) return new GlideSource(chest, "item.modifiers.chest");
+        if (hasGliderComponent(chest)) return new GlideSource(chest, "胸甲");
 
         ItemStack leggings = player.getInventory().getLeggings();
-        if (hasGliderComponent(leggings)) return new GlideSource(leggings, "item.modifiers.legs");
+        if (hasGliderComponent(leggings)) return new GlideSource(leggings, "護腿");
 
         ItemStack boots = player.getInventory().getBoots();
-        if (hasGliderComponent(boots)) return new GlideSource(boots, "item.modifiers.feet");
+        if (hasGliderComponent(boots)) return new GlideSource(boots, "靴子");
 
         ItemStack helmet = player.getInventory().getHelmet();
-        if (hasGliderComponent(helmet)) return new GlideSource(helmet, "item.modifiers.head");
+        if (hasGliderComponent(helmet)) return new GlideSource(helmet, "頭盔");
 
         return null;
     }

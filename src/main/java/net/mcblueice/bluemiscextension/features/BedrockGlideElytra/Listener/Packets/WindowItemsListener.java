@@ -7,47 +7,46 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.geysermc.floodgate.api.FloodgateApi;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
-import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.BedrockGlideElytra.BedrockGlideElytra;
 
-public class WindowItemsListener extends PacketAdapter {
+public class WindowItemsListener extends PacketListenerAbstract {
     private static final int PLAYER_INVENTORY_WINDOW_ID = 0;
     private static final int CHEST_SLOT = 6;
 
     private final BedrockGlideElytra bedrockGlideElytra;
 
     public WindowItemsListener(BedrockGlideElytra bedrockGlideElytra) {
-        super(BlueMiscExtension.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Server.WINDOW_ITEMS);
+        super(PacketListenerPriority.NORMAL);
         this.bedrockGlideElytra = bedrockGlideElytra;
     }
 
     @Override
-    public void onPacketSending(PacketEvent event) {
-        Player player = event.getPlayer();
+    public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.WINDOW_ITEMS) return;
+
+        if (!(event.getPlayer() instanceof Player player)) return;
         if (!FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) return;
 
-        PacketContainer originalPacket = event.getPacket();
+        WrapperPlayServerWindowItems windowItems = new WrapperPlayServerWindowItems(event);
 
-        Integer windowId = originalPacket.getIntegers().readSafely(0);
-        if (windowId == null || windowId != PLAYER_INVENTORY_WINDOW_ID) return;
+        if (windowItems.getWindowId() != PLAYER_INVENTORY_WINDOW_ID) return;
 
-        List<ItemStack> items = originalPacket.getItemListModifier().readSafely(0);
+        List<com.github.retrooper.packetevents.protocol.item.ItemStack> items = windowItems.getItems();
         if (items == null || items.isEmpty() || CHEST_SLOT >= items.size()) return;
 
         ItemStack virtualChestplate = bedrockGlideElytra.getVirtualElytraForPlayer(player);
         if (virtualChestplate == null) return;
 
-        List<ItemStack> modifiedItems = new ArrayList<>(items);
-        modifiedItems.set(CHEST_SLOT, virtualChestplate);
+        List<com.github.retrooper.packetevents.protocol.item.ItemStack> modifiedItems = new ArrayList<>(items);
+        modifiedItems.set(CHEST_SLOT, SpigotConversionUtil.fromBukkitItemStack(virtualChestplate));
 
-        PacketContainer clonedPacket = originalPacket.deepClone();
-        clonedPacket.getItemListModifier().writeSafely(0, modifiedItems);
-        event.setPacket(clonedPacket);
+        windowItems.setItems(modifiedItems);
     }
 }

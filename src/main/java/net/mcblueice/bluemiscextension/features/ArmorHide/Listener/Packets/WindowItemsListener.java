@@ -7,55 +7,57 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHideUtil;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 
-public class WindowItemsListener extends PacketAdapter {
-	private static final int PLAYER_INVENTORY_WINDOW_ID = 0;
-	private static final int ARMOR_SLOT_START = 5;
-	private static final int ARMOR_SLOT_END = 8;
+public class WindowItemsListener extends PacketListenerAbstract {
+    private static final int PLAYER_INVENTORY_WINDOW_ID = 0;
+    private static final int ARMOR_SLOT_START = 5;
+    private static final int ARMOR_SLOT_END = 8;
 
     private final ConfigManager lang;
-	private final ArmorHide armorHide;
+    private final ArmorHide armorHide;
 
-	public WindowItemsListener(BlueMiscExtension plugin, ArmorHide armorHide) {
-		super(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.WINDOW_ITEMS);
-		this.lang = plugin.getLanguageManager();
-		this.armorHide = armorHide;
-	}
+    public WindowItemsListener(BlueMiscExtension plugin, ArmorHide armorHide) {
+        super(PacketListenerPriority.NORMAL);
+        this.lang = plugin.getLanguageManager();
+        this.armorHide = armorHide;
+    }
 
-	@Override
-	public void onPacketSending(PacketEvent event) {
-		Player player = event.getPlayer();
+    @Override
+    public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.WINDOW_ITEMS) return;
 
-		if (!armorHide.isArmorHidden(player)) return;
-		if (player.getGameMode() == GameMode.CREATIVE) return;
+        if (!(event.getPlayer() instanceof Player player)) return;
+        if (!armorHide.isArmorHidden(player)) return;
+        if (player.getGameMode() == GameMode.CREATIVE) return;
 
-		PacketContainer originalPacket = event.getPacket();
-		Integer windowId = originalPacket.getIntegers().readSafely(0);
-		if (windowId == null || windowId != PLAYER_INVENTORY_WINDOW_ID) return;
+        WrapperPlayServerWindowItems packet = new WrapperPlayServerWindowItems(event);
 
-		List<ItemStack> items = originalPacket.getItemListModifier().readSafely(0);
-		if (items == null || items.isEmpty()) return;
+        if (packet.getWindowId() != PLAYER_INVENTORY_WINDOW_ID) return;
 
-		List<ItemStack> modifiedItems = new ArrayList<>(items);
-		for (int slot = ARMOR_SLOT_START; slot <= ARMOR_SLOT_END && slot < modifiedItems.size(); slot++) {
-			ItemStack armor = modifiedItems.get(slot);
-			if (armor == null) continue;
-			ItemStack placeholder = ArmorHideUtil.armorConvert(armor, lang);
-			modifiedItems.set(slot, placeholder);
-		}
+        List<com.github.retrooper.packetevents.protocol.item.ItemStack> items = packet.getItems();
+        if (items == null || items.isEmpty()) return;
 
-		PacketContainer clonedPacket = originalPacket.deepClone();
-		clonedPacket.getItemListModifier().writeSafely(0, modifiedItems);
-		event.setPacket(clonedPacket);
-	}
+        List<com.github.retrooper.packetevents.protocol.item.ItemStack> modifiedItems = new ArrayList<>(items);
+        for (int slot = ARMOR_SLOT_START; slot <= ARMOR_SLOT_END && slot < modifiedItems.size(); slot++) {
+            com.github.retrooper.packetevents.protocol.item.ItemStack peArmor = modifiedItems.get(slot);
+            ItemStack bukkitArmor = SpigotConversionUtil.toBukkitItemStack(peArmor);
+            if (bukkitArmor == null || bukkitArmor.getType().isAir()) continue;
+
+            ItemStack placeholder = ArmorHideUtil.armorConvert(bukkitArmor, lang);
+            modifiedItems.set(slot, SpigotConversionUtil.fromBukkitItemStack(placeholder));
+        }
+
+        packet.setItems(modifiedItems);
+    }
 }

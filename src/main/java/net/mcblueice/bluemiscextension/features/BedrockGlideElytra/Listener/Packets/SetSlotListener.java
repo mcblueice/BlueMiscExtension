@@ -4,44 +4,40 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.geysermc.floodgate.api.FloodgateApi;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
-import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.BedrockGlideElytra.BedrockGlideElytra;
 
-public class SetSlotListener extends PacketAdapter {
+public class SetSlotListener extends PacketListenerAbstract {
     private static final int PLAYER_INVENTORY_WINDOW_ID = 0;
     private static final int CHEST_SLOT = 6;
 
     private final BedrockGlideElytra bedrockGlideElytra;
 
     public SetSlotListener(BedrockGlideElytra bedrockGlideElytra) {
-        super(BlueMiscExtension.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Server.SET_SLOT);
+        super(PacketListenerPriority.NORMAL);
         this.bedrockGlideElytra = bedrockGlideElytra;
     }
 
     @Override
-    public void onPacketSending(PacketEvent event) {
-        Player player = event.getPlayer();
+    public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.SET_SLOT) return;
+
+        if (!(event.getPlayer() instanceof Player player)) return;
         if (!FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) return;
 
-        PacketContainer originalPacket = event.getPacket();
-
-        Integer windowId = originalPacket.getIntegers().readSafely(0);
-        if (windowId == null || windowId != PLAYER_INVENTORY_WINDOW_ID) return;
-
-        Integer slot = originalPacket.getIntegers().readSafely(2);
-        if (slot == null || slot != CHEST_SLOT) return;
+        WrapperPlayServerSetSlot setSlot = new WrapperPlayServerSetSlot(event);
+        if (setSlot.getWindowId() != PLAYER_INVENTORY_WINDOW_ID) return;
+        if (setSlot.getSlot() != CHEST_SLOT) return;
 
         ItemStack virtualItem = bedrockGlideElytra.getVirtualElytraForPlayer(player);
         if (virtualItem == null) return;
 
-        PacketContainer clonedPacket = originalPacket.deepClone();
-        clonedPacket.getItemModifier().writeSafely(0, virtualItem);
-        event.setPacket(clonedPacket);
+        setSlot.setItem(SpigotConversionUtil.fromBukkitItemStack(virtualItem));
     }
 }

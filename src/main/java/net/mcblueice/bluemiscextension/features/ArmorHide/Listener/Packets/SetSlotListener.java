@@ -1,50 +1,52 @@
 package net.mcblueice.bluemiscextension.features.ArmorHide.Listener.Packets;
 
 import org.bukkit.GameMode;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHide;
 import net.mcblueice.bluemiscextension.features.ArmorHide.ArmorHideUtil;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 
-public class SetSlotListener extends PacketAdapter {
+public class SetSlotListener extends PacketListenerAbstract {
     private final ConfigManager lang;
     private final ArmorHide armorHide;
 
     public SetSlotListener(BlueMiscExtension plugin, ArmorHide armorHide) {
-        super(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.SET_SLOT);
-        this.plugin = plugin;
+        super(PacketListenerPriority.NORMAL);
         this.lang = plugin.getLanguageManager();
         this.armorHide = armorHide;
     }
 
     @Override
-    public void onPacketSending(PacketEvent event) {
-        PacketContainer packet = event.getPacket().deepClone();
-        Player player = event.getPlayer();
+    public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.SET_SLOT) return;
 
+        if (!(event.getPlayer() instanceof Player player)) return;
         if (!armorHide.isArmorHidden(player)) return;
         if (player.getGameMode() == GameMode.CREATIVE) return;
 
-        int windowId = packet.getIntegers().readSafely(0);
-        if (windowId != 0) return;
+        WrapperPlayServerSetSlot packet = new WrapperPlayServerSetSlot(event);
 
-        int slot = packet.getIntegers().readSafely(2);
+        if (packet.getWindowId() != 0) return;
+
+        int slot = packet.getSlot();
         if (slot < 5 || slot > 8) return;
-        ItemStack originalItem = packet.getItemModifier().readSafely(0);
-        if (originalItem != null && originalItem.getType() != Material.AIR) {
+
+        com.github.retrooper.packetevents.protocol.item.ItemStack peItem = packet.getItem();
+        ItemStack originalItem = SpigotConversionUtil.toBukkitItemStack(peItem);
+
+        if (originalItem != null && !originalItem.getType().isAir()) {
             ItemStack newItem = ArmorHideUtil.armorConvert(originalItem, this.lang);
-            packet.getItemModifier().writeSafely(0, newItem);
-            event.setPacket(packet);
+            packet.setItem(SpigotConversionUtil.fromBukkitItemStack(newItem));
         }
     }
 }
