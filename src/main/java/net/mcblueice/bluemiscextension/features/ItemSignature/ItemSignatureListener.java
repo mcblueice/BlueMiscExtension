@@ -1,7 +1,10 @@
 package net.mcblueice.bluemiscextension.features.ItemSignature;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,12 +17,16 @@ import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.view.AnvilView;
 
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 
 import io.papermc.paper.event.player.CartographyItemEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
+import net.mcblueice.bluemiscextension.api.PlayerInventoryUpdateEvent;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluelib.utils.TaskScheduler;
 import net.mcblueice.bluelib.utils.TextUtil;
@@ -113,6 +120,38 @@ public class ItemSignatureListener implements Listener {
             event.setCancelled(true);
             if (debug) plugin.sendDebug("阻擋 Crafter 產生帶署名輸出結果 @" + event.getBlock().getWorld().getName() + "," + event.getBlock().getX() + " " + event.getBlock().getY() + " " + event.getBlock().getZ());
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryUpdate(PlayerInventoryUpdateEvent event) {
+        Player player = event.getPlayer();
+        if (player == null || !player.isOnline()) return;
+
+        event.getInventory().forEach(item -> fixSignedItem(player, item));
+    }
+
+    private void fixSignedItem(Player player, ItemStack item) {
+        if (item == null || item.getType().isAir()) return;
+        UUID signerUuid = itemSignature.getSignerUuid(item);
+        if (signerUuid == null) return;
+
+        String storedName = itemSignature.getSignerName(item);
+        String currentName = Bukkit.getOfflinePlayer(signerUuid).getName();
+        if (currentName == null || !currentName.equals(storedName)) return;
+
+        ItemMeta itemMeta = item.getItemMeta();
+
+        Component signedLore = TextUtil.parse(lang.get("ItemSignature.SignedLore", storedName), true, false).decoration(TextDecoration.ITALIC, false);
+
+        List<Component> lore = itemMeta.lore();
+        if (lore != null && lore.contains(signedLore)) return;
+
+        List<Component> newLore = lore != null ? new ArrayList<>(lore) : new ArrayList<>();
+        newLore.add(signedLore);
+        itemMeta.lore(newLore);
+        item.setItemMeta(itemMeta);
+
+        if (debug) plugin.sendDebug("已為玩家 " + player.getName() + " 修改署名文字: " + item.getType().name() + " (署名者: " + storedName + ")");
     }
 
     private Player resolveViewer(InventoryView view) {

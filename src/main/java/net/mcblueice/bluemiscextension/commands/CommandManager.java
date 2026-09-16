@@ -18,6 +18,7 @@ import net.mcblueice.bluemiscextension.commands.subcommands.InfoCommand;
 import net.mcblueice.bluemiscextension.commands.subcommands.ReloadCommand;
 import net.mcblueice.bluemiscextension.commands.subcommands.StatusCommand;
 import net.mcblueice.bluemiscextension.commands.subcommands.UnlockDataCommand;
+import net.mcblueice.bluemiscextension.commands.subcommands.UpdateInvCommand;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 
 public class CommandManager implements CommandExecutor, TabCompleter {
@@ -35,6 +36,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         this.register(new StatusCommand(plugin, this), "bluemiscextension.status", new String[]{"status"});
         this.register(new UnlockDataCommand(plugin, this), "bluemiscextension.unlockdata", new String[]{"unlockdata"});
         this.register(new InfoCommand(plugin, this), "bluemiscextension.info", new String[]{"info"});
+        this.register(new UpdateInvCommand(plugin, this), "bluemiscextension.updateinv", new String[]{"updateinv"});
     }
 
     public void register(SubCommand subCommand, String permission, String[] names) {

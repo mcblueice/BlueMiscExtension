@@ -2,26 +2,32 @@ package net.mcblueice.bluemiscextension.features.ClickThrough;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
+import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.persistence.PersistentDataContainer;
 
 import net.mcblueice.bluemiscextension.BlueMiscExtension;
 import net.mcblueice.bluemiscextension.features.Feature;
 
 public class ClickThrough implements Feature, Listener {
     private final BlueMiscExtension plugin;
+    private static final NamespacedKey QUICKSHOP_HIKARI_KEY = new NamespacedKey("quickshop-hikari", "shopsign");;
 
     public ClickThrough(BlueMiscExtension plugin) {
         this.plugin = plugin;
@@ -37,8 +43,9 @@ public class ClickThrough implements Feature, Listener {
         HandlerList.unregisterAll(this);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInteractSign(PlayerInteractEvent event) {
+        if (event.useInteractedBlock() == Event.Result.DENY || event.useItemInHand() == Event.Result.DENY) return;
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         
         Block block = event.getClickedBlock();
@@ -48,6 +55,12 @@ public class ClickThrough implements Feature, Listener {
         
         Player player = event.getPlayer();
         if (!player.hasPermission("bluemiscextension.clickthrough")) return;
+
+        if (block.getState(false) instanceof Sign sign) {
+            PersistentDataContainer pdc = sign.getPersistentDataContainer();
+            if (pdc.has(QUICKSHOP_HIKARI_KEY)) return;
+        }
+
         if (player.isSneaking()) return;
 
         Block targetBlock = null;
@@ -83,8 +96,9 @@ public class ClickThrough implements Feature, Listener {
         event.setCancelled(true);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInteractItemframe(PlayerInteractAtEntityEvent event) {
+        if (event.isCancelled()) return;
         if (!(event.getRightClicked() instanceof ItemFrame itemFrame)) return;
 
         Player player = event.getPlayer();

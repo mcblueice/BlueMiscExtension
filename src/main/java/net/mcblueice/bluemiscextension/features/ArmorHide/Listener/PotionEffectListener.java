@@ -20,8 +20,8 @@ public class PotionEffectListener implements Listener {
 
     @EventHandler
     public void onPlayerPotionEffect(EntityPotionEffectEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
-        Player player = (Player) event.getEntity();
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (event.getAction() == EntityPotionEffectEvent.Action.CHANGED) return;
         if (!armorHide.isArmorHidden(player)) return;
         TaskScheduler.runTaskLater(player, plugin, () -> armorHide.updatePlayer(player), 1L);
     }

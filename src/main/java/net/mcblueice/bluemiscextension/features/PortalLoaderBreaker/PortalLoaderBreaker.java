@@ -15,7 +15,7 @@ public class PortalLoaderBreaker implements Feature, Listener {
     private final BlueMiscExtension plugin;
     private long serverStartTime;
     private long delayTime;
-    private volatile boolean isExpired = false;
+    private volatile long manualBlockUntil = 0;
 
     public PortalLoaderBreaker(BlueMiscExtension plugin) {
         this.plugin = plugin;
@@ -24,24 +24,26 @@ public class PortalLoaderBreaker implements Feature, Listener {
     @Override
     public void register() {
         serverStartTime = System.currentTimeMillis();
-        delayTime = plugin.getConfig().getLong("Features.PortalLoaderBreaker.DelayTime", 180000);
+        delayTime = Math.max(1, plugin.getConfig().getLong("Features.PortalLoaderBreaker.DelayTime", 180000));
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        plugin.getCommandManager().register(new PortalLoaderBreakerCommand(plugin, this), "bluemiscextension.portalbreak", new String[]{"portalbreak"});
     }
 
     @Override
     public void unregister() {
         HandlerList.unregisterAll(this);
+        plugin.getCommandManager().unregister("portalbreak");
+    }
+
+    public void stopPortalLoading(long durationMillis) {
+        this.manualBlockUntil = System.currentTimeMillis() + durationMillis;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityPortalEnter(EntityPortalEnterEvent event) {
-        if (isExpired) return;
         if (event.getEntity() instanceof Player) return;
 
-        if (System.currentTimeMillis() - serverStartTime < delayTime) {
-            event.getEntity().setPortalCooldown(600);
-        } else {
-            if (!isExpired) isExpired = true; 
-        }
+        long now = System.currentTimeMillis();
+        if ((now - serverStartTime < delayTime) || (now < manualBlockUntil)) event.getEntity().setPortalCooldown(600);
     }
 }

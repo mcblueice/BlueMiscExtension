@@ -15,6 +15,7 @@ import net.mcblueice.bluemiscextension.features.Elevator.Elevator;
 import net.mcblueice.bluemiscextension.features.ElytraArmor.ElytraArmor;
 import net.mcblueice.bluemiscextension.features.LightBlock.LightBlock;
 import net.mcblueice.bluemiscextension.features.ItemSignature.ItemSignature;
+import net.mcblueice.bluemiscextension.features.ItemUpdater.ItemUpdater;
 import net.mcblueice.bluemiscextension.features.PlaceholderAPI.PlaceholderFeature;
 import net.mcblueice.bluemiscextension.features.PlayerNick.PlayerNick;
 import net.mcblueice.bluemiscextension.features.PortalLoaderBreaker.PortalLoaderBreaker;
@@ -52,6 +53,7 @@ public class FeatureManager {
         loadFeature("ElytraArmor", ElytraArmor::new);
         loadFeature("ClickThrough", ClickThrough::new);
         loadFeature("PlaceholderAPI", "PlaceholderAPI", PlaceholderFeature::new);
+        loadFeature("ItemUpdater", ItemUpdater::new);
     }
 
     public void unloadAll() {

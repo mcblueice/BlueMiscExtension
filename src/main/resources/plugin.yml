@@ -8,6 +8,7 @@ softdepend:
   - packetevents
   - PlaceholderAPI
   - floodgate
+  - HuskSync
 libraries:
   - com.zaxxer:HikariCP:7.1.0
 folia-supported: true
@@ -34,6 +35,12 @@ permissions:
     default: op
   bluemiscextension.unlockdata:
     description: 允許使用 /bluemiscextension unlockdata 指令
+    default: op
+  bluemiscextension.updateinv:
+    description: 允許使用 /bluemiscextension updateinv 指令
+    default: op
+  bluemiscextension.portalbreak:
+    description: 允許使用 /bluemiscextension portalbreak 指令
     default: op
   bluemiscextension.workbench:
     description: 允許使用 /bluemiscextension workbench 指令

@@ -66,3 +66,6 @@ Features:
   PlaceholderAPI:
     enable: true
     debug: false
+  ItemUpdater:
+    enable: true
+    debug: false

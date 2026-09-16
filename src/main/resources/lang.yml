@@ -37,6 +37,9 @@ FeatureName:
   PortalLoaderBreaker: "傳送門載入器破壞"
   ElytraArmor: "鞘翅盔甲"
   PlaceholderAPI: "佔位符"
+  PhantomSpawnLimiter: "夜寐生成限制"
+  ClickThrough: "告示牌點擊穿透"
+  ItemUpdater: "物品更新"
 
 # 虛擬工作站
 VirtualWorkbench:
@@ -89,6 +92,10 @@ ItemSignature:
   SignedSuccess: "&a已完成物品署名!"
   UnsignedSuccess: "&a已解除該物品的署名!"
   SignedLore: "&7&l由 &b&l%{1} &7&l署名的物品"
+
+# 傳送門載入器破壞
+PortalLoaderBreaker:
+  Stop: "&a已阻止傳送門加載 &r%{1} &a秒!"
 
 # 鞘翅盔甲
 ElytraArmor:

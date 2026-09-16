@@ -14,6 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.mcblueice.bluemiscextension.listeners.PlayerDataListener;
 import net.mcblueice.bluemiscextension.utils.ConfigManager;
 import net.mcblueice.bluemiscextension.utils.DatabaseUtil;
+import net.mcblueice.bluemiscextension.utils.HuskSyncAPIHook;
 import net.kyori.adventure.text.Component;
 import net.mcblueice.bluelib.utils.TextUtil;
 import net.mcblueice.bluemiscextension.commands.AliasCommand;
@@ -27,6 +28,7 @@ public class BlueMiscExtension extends JavaPlugin {
     private DatabaseUtil databaseUtil;
     private ConfigManager lang;
     private CommandManager commandManager;
+    private HuskSyncAPIHook huskSyncAPIHook;
     private AliasCommand aliasCommand;
     public final UUID CONSOLE_UUID = new UUID(0L, 0L);
     public final Set<UUID> debugModePlayers = ConcurrentHashMap.newKeySet();
@@ -53,6 +55,7 @@ public class BlueMiscExtension extends JavaPlugin {
             return;
         }
 
+        if (Bukkit.getPluginManager().getPlugin("HuskSync") != null) huskSyncAPIHook = new HuskSyncAPIHook();
         featureManager = new FeatureManager(this);
         commandManager = new CommandManager(this);
         getCommand("bluemiscextension").setExecutor(commandManager);
@@ -154,5 +157,6 @@ public class BlueMiscExtension extends JavaPlugin {
     public ConfigManager getLanguageManager() { return lang; }
     public FeatureManager getFeatureManager() { return featureManager; }
     public CommandManager getCommandManager() { return commandManager; }
+    public HuskSyncAPIHook getHuskSyncAPIHook() { return huskSyncAPIHook; }
     public AliasCommand getAliasCommand() { return aliasCommand; }
 }

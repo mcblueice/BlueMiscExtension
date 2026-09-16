@@ -15,9 +15,10 @@
 - 物品署名與保護 (ItemSignature)
 - 玩家暱稱 (PlayerNick)
 - 鞘翅合併胸甲 (ElytraArmor): 在鐵砧上將鞘翅合入胸甲取得滑翔效果
-- 穿透點擊 (ClickThrough): 懸浮文字等介面允許穿透點擊
-- 開服地獄門實體冷卻 (PortalLoaderBreaker): 延遲非玩家實體進入傳送門
+- 穿透點擊 (ClickThrough): 懸浮文字等介面允許穿透點擊 並自動略過 QuickShop-Hikari 商店告示牌
+- 開服地獄門實體冷卻 (PortalLoaderBreaker): 延遲非玩家實體進入傳送門 並可用指令手動開啟封鎖
 - 夜魅生成限制 (PhantomSpawnLimiter): 可開關玩家夜魅生成
+- 物品更新 (ItemUpdater): 玩家資料與 HuskSync 同步完成後統一刷新物品欄 並開放 `PlayerInventoryUpdateEvent` 供其他插件調整物品
 - PlaceholderAPI 支援
 
 ## 指令列表
@@ -36,6 +37,8 @@
 | `/bme nick <暱稱> [player]` | 設定玩家暱稱，`-clear` 清除 | `bluemiscextension.nick` |
 | `/bme sign` | 對主手物品署名／解除署名 | `bluemiscextension.itemsign` |
 | `/bme phantomspawn <player>` | 切換玩家夜魅生成開關 | `bluemiscextension.phantomspawn` |
+| `/bme updateinv [player]` | 立即觸發物品欄更新 (未指定玩家時對所有在線玩家觸發) | `bluemiscextension.updateinv` |
+| `/bme portalbreak [秒數]` | 手動阻止非玩家實體進入傳送門 (未指定秒數時使用 `Features.PortalLoaderBreaker.DelayTime`) | `bluemiscextension.portalbreak` |
 
 ### workbench 類型與權限
 
@@ -78,6 +81,30 @@
 | `%bluemiscextension_displayname%` | 顯示玩家顯示名稱 |
 | `%bluemiscextension_tps%` | 顯示玩家所在區域 TPS |
 | `%bluemiscextension_minimessage_<內容>%` | 將內容轉換為保留顏色的純文字 |
+
+## 物品更新事件 (API)
+
+`ItemUpdater` 功能會在玩家資料載入完成後(若伺服器安裝 HuskSync 則會等待同步完成)拋出 `PlayerInventoryUpdateEvent` 監聽者可直接修改 `event.getInventory()` 內的物品 (與玩家實際物品欄為同一參照 修改後自動生效):
+
+```java
+@EventHandler(priority = EventPriority.HIGH)
+public void onInventoryUpdate(PlayerInventoryUpdateEvent event) {
+    event.getInventory().forEach(item -> {
+        // 修改物品名稱、lore 或 PDC
+    });
+}
+```
+
+也可呼叫 `PlayerInventoryUpdateEvent.call(player)` 手動觸發一次更新 (等效於 `/bme updateinv <player>`)
+
+## 軟依賴
+
+| 插件 | 用途 |
+|------|------|
+| PacketEvents | 封包處理 (吸收縮放、裝備隱形、基岩版虛擬鞘翅、受擊粒子限制) |
+| PlaceholderAPI | 提供佔位符 |
+| Floodgate | 基岩版玩家判斷 |
+| HuskSync | 玩家資料同步完成後才觸發物品更新事件 |
 
 ## 授權 License
 
